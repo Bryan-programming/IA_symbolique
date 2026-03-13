@@ -1,26 +1,53 @@
 <!DOCTYPE html>
 <html lang="fr">
+
   <head>
     <meta charset="UTF-8">
     <title>Le bot de PontuXL</title>
     <link rel="stylesheet" href="style.css">
+    <script src="./main.js" type="module"></script>
   </head>
+
   <body>
-    <section>
-      <h1>Le bot de PontuXL</h1>
-      <p>Beta version</p>
-      <div class="container">
-	<p><img src="pontu.jpg" align="center" width=150></img></p>
-	<p id="annonce" onclick="annonceOut()"><br>A utiliser avec Google Chrome<br>
-	Cliquer sur ce paragraphe pour continuer</p>
-        <div class="texts"> 
-	</div>
-      </div>
+    <section><!-- C'est ici que Rayanne et Reda trvaillerons-->
+
+        <h1>Le bot de PontuXL</h1>
+        <p>Beta version</p>
+        <div class="container">
+          <p><img src="pontu.jpg" align="center" width=150></img></p>
+          <p id="annonce" onclick="annonceOut()"><br>A utiliser avec Google Chrome<br>
+          Cliquer sur ce paragraphe pour continuer</p>
+          <div class="texts"> 
+          </div>
+        </div>
+
     </section>
-    <script src="./tau-prolog.js"></script>
-    <script src="./chat_bot.js"></script>    
-    <script src="./prolog_session.js"></script>    
-    <script src="./main.js"></script>
+      
+
+      <div class="chat-section"><!--C'est ici que Adam et Bryan travaillerons-->
+         
+        <div class="chat-text">
+                <h3>Bienvenue ! </h3>
+                <h3>Je suis le bot de PontuXL. Puis-je vous aider ? </h3>
+            </div>
+
+            <div class="output">
+
+            </div>
+
+        <form class="chat-form" > <!--changer pour un div pour empêcher la page de se recharger ?-->
+                <input type="text" id="chat-input" class="chat-input" placeholder=" posez une question..."/>
+                <button type="button" class="chat-submit" id="chat-submit">send</button>
+            </form>   
+      </div>
+
+      
   </body>
+
+<script src="./tau-prolog.js"></script>
+<script src="./chat_bot.js"></script>    
+<script src="./prolog_session.js"></script>  
+<script></script>  
+
 </html>
 
