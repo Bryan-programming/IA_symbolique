@@ -27,10 +27,10 @@ produire_reponse(L,Rep) :-
     mclef(M,_), member(M,L),
     clause(regle_rep(M,_,Pattern,Rep),Body),
     match_pattern(Pattern,L), 
-    call(Body), !.
+    call(Body),!.
 
 produire_reponse(_,[S1,S2]) :-
-    S1 = "Je ne sais pas. ",
+    S1 = " Je ne sais pas. ",
     S2 = "Les étudiants vont m'aider, vous le verrez".
 
 match_pattern(Pattern,Lmots) :-
@@ -397,7 +397,3 @@ pontuXL :-
 /* --------------------------------------------------------------------- */
 
 :- pontuXL.
-
-
-
-
