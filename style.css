@@ -9,10 +9,12 @@
   margin: 0;
   box-sizing: border-box;
 }
+
 html {
   font-family: "Montserrat";
   font-size: 20px;
 }
+
 section {
   min-height: 100vh;
   width: 100%;
@@ -22,6 +24,7 @@ section {
   flex-direction: column;
   padding: 50px 0;
 }
+
 section h1 {
   color: rgba(255, 255, 255, 0.322);
   text-align: center;
@@ -29,18 +32,21 @@ section h1 {
   font-size: 50px;
   margin-bottom: 10px;
 }
+
 section p {
   text-align: center;
   color: rgba(255, 255, 255, 0.322);
   width: 100%;
   margin-bottom: 40px;
 }
+
 .container {
   width: 90%;
   max-width: 500px;
   margin: 0 auto;
   justify-content: center;
 }
+
 .texts p {
   color: black;
   text-align: left;
@@ -50,6 +56,96 @@ section p {
   border-radius: 8px;
   margin-bottom: 10px;
 }
+
 .texts p.replay {
   text-align: right;
+}
+
+body{
+  display: flex;
+  flex-direction: row;
+}
+
+.chat-section{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 40%;
+  background-color: grey;
+}
+
+.chat-form{
+    width: 100%;
+}
+
+#chat-input{
+    width: 75%;
+    height: 30px;
+    border-radius: 12px;
+    margin-left: 5px;
+}
+
+#chat-input:focus{
+    outline: none;
+    box-shadow: 0 0 5px #719ECE;
+    border: 1px solid #719ECE;
+}
+
+#chat-input:hover{
+    border: 1px solid #555555;
+}
+
+#chat-submit{
+    width: 20%;
+    height: 30px;
+    border-radius: 8px;
+}
+
+#chat-submit:hover{
+    background-color: #292828;
+    color: rgb(248, 248, 248);
+    cursor: pointer;
+}
+
+#map { 
+    width: 70%;
+    height: 70%;
+    
+}
+
+.chat-text{
+    color: white;
+    text-align: center;
+    margin-bottom: 0px;
+}
+
+.output{
+    color: white !important;
+    text-align:justify;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: 400px; /* hauteur maximale souhaitée */ 
+    overflow-y: auto; /* affiche une barre de défilement verticale si le contenu dépasse */
+}
+
+.message{
+    background-color: #9db0b0;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 10px;
+    display: flex;
+    flex: 1 0 auto;
+    color: black;
+    width: auto;
+}
+
+.agent{
+    align-self: flex-start;
+}
+
+.user{
+    align-self: flex-end;
 }

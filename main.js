@@ -2,6 +2,7 @@
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
 
+import { addUserMessage, addAgentMessage, showLoading } from './util.js';
 
 function annonceOut() {
 
@@ -17,8 +18,6 @@ function annonceOut() {
     window.speechSynthesis.speak(speech);
     
 } 
-
-
 
 function toArray (str) {
   const array = []
@@ -110,4 +109,23 @@ recognition.addEventListener("end", () => {
   recognition.start();
 });
 
+function main(){
+  document.querySelector('.chat-submit').addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        const input = document.querySelector('.chat-input');
+        const question = input.value;
+        input.value = "";
+
+        addUserMessage(question);// afficher le message utilisateur dans le chat
+        const loader = showLoading();
+
+        loader.remove();
+        addAgentMessage(iaData.text);// afficher le message de l'assistant dans le chat
+
+    });
+}
+
+main();
 recognition.start();
+
