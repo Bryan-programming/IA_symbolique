@@ -109,6 +109,71 @@ recognition.addEventListener("end", () => {
   recognition.start();
 });
 
+
+
+function print_board() {
+    /* ici j'ai suppose que le plateau sera une liste puisque on a pas encore la base de connaissance,
+     puis apres quand on la fait en transforme cette base de connaisance en liste comme celle ci .*/
+
+
+    const cases = [
+        [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
+        [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+        [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
+        [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
+        [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
+        [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],
+    ];
+
+    let limit =cases[cases.length-1][1];
+
+    const plateau = document.getElementById('plateau');
+    const table = document.createElement('table');
+    let row, rowPontV;
+
+    cases.forEach(([x, y]) => {
+
+        if (x === 1) {
+            row = document.createElement("tr");
+            if (y !== limit) rowPontV = document.createElement("tr");
+        }
+        //creation des cases normal
+        const td = document.createElement("td");
+        td.classList.add("case");
+        td.dataset.x = x;
+        td.dataset.y = y;
+        row.appendChild(td);
+
+        if (x !==limit) {
+            const tdPontH = document.createElement("td");
+            tdPontH.classList.add("pont-h");
+            row.appendChild(tdPontH);
+        }
+        // Ajouter les ponts vertical  à la ligne déjà créée
+        if (y !== limit) {
+
+              //creattion des cases pour les  ponts verticale
+              const tdPontV = document.createElement("td");
+              tdPontV.classList.add("pont-v");
+              rowPontV.appendChild(tdPontV);
+
+              //creation des espaces vide entre les cases
+              const coin = document.createElement("td");
+              coin.classList.add("coin");
+              rowPontV.appendChild(coin);
+        }
+
+        if (x === limit) {
+            table.appendChild(row);
+            if (y !== limit) table.appendChild(rowPontV);
+        }
+    });
+    plateau.appendChild(table);
+}
+
+
+
+
 function main(){
   document.querySelector('.chat-submit').addEventListener('click', async (e) => {
         e.preventDefault();
@@ -127,5 +192,6 @@ function main(){
 }
 
 main();
+print_board();
 recognition.start();
 
