@@ -171,26 +171,66 @@ body{
 }
 
 .case {
-      width: 45px;
-      height: 45px;
-      background-color: #8B4513;
+      width: 60px;
+      height: 60px;
+      background-color: lightgreen;
       border: 2px solid #333;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 }
 
-.pont-h {
+.lutin {
       width: 40px;
-      height: 30px;
-      background-color: lightgrey;
+      height: 40px;
+      border-radius: 50%;
 }
 
-.pont-v {
-      width: 4px;
-      height: 40px;
-      background-color: lightgrey;
-  }
+.vert  { background-color: #2ecc71; }
+.rouge { background-color: #e74c3c; }
+.bleu  { background-color: #3498db; }
+.jaune { background-color: #f1c40f; }
 
+
+/* Pont horizontal — ligne fine centrée */
+.pont-h {
+    width: 40px;
+    height: 16px;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        peru 40% 60%,
+        transparent 60%
+    );
+}
+
+/* Pont vertical — ligne fine centrée */
+.pont-v {
+    width: 16px;
+    height: 40px;
+    background: linear-gradient(
+        to right,
+        transparent 40%,
+        peru 40% 60%,
+        transparent 60%
+    );
+}
+
+/*les cases transparent  pour representer le vide */
 .coin {
       width: 20px;
       height: 20px;
       background-color: transparent;
 }
+
+.lutin {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.vert  { background-color: #2ecc71; }
+.rouge { background-color: #e74c3c; }
+.bleu  { background-color: #3498db; }
+.jaune { background-color: #f1c40f; }

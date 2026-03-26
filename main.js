@@ -145,6 +145,38 @@ recognition.addEventListener("end", () => {
 
 
 
+
+recognition.start();
+
+const button= document.getElementById("chat-submit");
+button.addEventListener('click',()=>{
+const input = document.querySelector('.chat-input');
+const question = input.value;
+input.value = "";
+const ascii_list_of_question= toArray(question);
+const question_parse = `lire_question([${ascii_list_of_question}],LMots),
+                                  produire_reponse(LMots,L_reponse),
+                                        transformer_reponse_en_string(L_reponse,Temp),
+                                               atom_codes(Message,Temp).`;
+  addUserMessage(question);
+  // c'est ici que  j'envoi la requette à le session prolog 
+  // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
+  plSession.runQuery(question_parse);
+});
+
+
+
+
+
+//  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog----------------------------------- \\
+
+// le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
+
+
+
+
+
+
 function print_board() {
     /* ici j'ai suppose que le plateau sera une liste puisque on a pas encore la base de connaissance,
      puis apres quand on la fait en transforme cette base de connaisance en liste comme celle ci .*/
@@ -203,38 +235,27 @@ function print_board() {
         }
     });
     plateau.appendChild(table);
+
 }
 
+function placerLutin(x, y, couleur) {
+    const cas = document.querySelector(`.case[data-x="${x}"][data-y="${y}"]`);//recuperer la case par son id 
+    const lutin = document.createElement('div');//creer un div enfant 
+    lutin.classList.add('lutin', couleur);//lui donner une classe pour le styliser dans le css 
+    cas.appendChild(lutin);//ajout du div cree a la case parente
+}
 
-recognition.start();
+// placer les lutins pour le test 
+    placerLutin(1, 1, 'vert');
+    placerLutin(6, 6, 'rouge');
+    placerLutin(1, 6, 'bleu');
+    placerLutin(6, 1, 'jaune');
 
-const button= document.getElementById("chat-submit");
-button.addEventListener('click',()=>{
-const input = document.querySelector('.chat-input');
-const question = input.value;
-input.value = "";
-const ascii_list_of_question= toArray(question);
-const question_parse = `lire_question([${ascii_list_of_question}],LMots),
-                                  produire_reponse(LMots,L_reponse),
-                                        transformer_reponse_en_string(L_reponse,Temp),
-                                               atom_codes(Message,Temp).`;
-  addUserMessage(question);
-  // c'est ici que  j'envoi la requette à le session prolog 
-  // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
-  plSession.runQuery(question_parse);
-});
-
-
-
-
-
-
-
-//  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog----------------------------------- \\
-
-// le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
 
 print_board();
+
+
+
 
 
 
