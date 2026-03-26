@@ -2,7 +2,41 @@
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
 
-import { addUserMessage, addAgentMessage, showLoading } from './util.js';
+// fonctions pour gérer l'interface de chat
+
+/**
+ * add the user message to the chat interface
+ * @param {*} text - the text of the user message
+ */
+function addUserMessage(text) {
+    document.querySelector('.output').innerHTML += `
+        <div class="message user">
+            <strong>Vous:</strong> ${text}
+        </div>`;
+}
+
+/**
+ * add the agent message to the chat interface
+ * @param {*} text - the text of the agent message
+ */
+function addAgentMessage(text) {
+    document.querySelector('.output').innerHTML += `
+        <div class="message agent">
+            <strong>PBot:</strong> ${text}
+        </div>`;
+}
+
+/**
+ * show a loading message in the chat and return the element to be able to remove it later
+ * @returns {HTMLElement} - the loading element
+ */
+function showLoading() {
+    const el = document.createElement('div');
+    el.className = 'Loading';
+    el.innerText = 'Le bot  réfléchit...';
+    document.querySelector('.output').appendChild(el);
+    return el;
+}
 
 function annonceOut() {
 
@@ -62,7 +96,7 @@ speech.rate = 1;
 speech.pitch = 1;
 
 const plSession = new PrologSession();
-var question = '';
+var question = 'c';
 var response = '';
 var realresponse = '';
 
@@ -172,26 +206,37 @@ function print_board() {
 }
 
 
-
-
-function main(){
-  document.querySelector('.chat-submit').addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        const input = document.querySelector('.chat-input');
-        const question = input.value;
-        input.value = "";
-
-        addUserMessage(question);// afficher le message utilisateur dans le chat
-        const loader = showLoading();
-
-        loader.remove();
-        addAgentMessage(iaData.text);// afficher le message de l'assistant dans le chat
-
-    });
-}
-
-main();
-print_board();
 recognition.start();
+
+const button= document.getElementById("chat-submit");
+button.addEventListener('click',()=>{
+const input = document.querySelector('.chat-input');
+const question = input.value;
+input.value = "";
+const ascii_list_of_question= toArray(question);
+const question_parse = `lire_question([${ascii_list_of_question}],LMots),
+                                  produire_reponse(LMots,L_reponse),
+                                        transformer_reponse_en_string(L_reponse,Temp),
+                                               atom_codes(Message,Temp).`;
+  addUserMessage(question);
+  // c'est ici que  j'envoi la requette à le session prolog 
+  // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
+  plSession.runQuery(question_parse);
+});
+
+
+
+
+
+
+
+//  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog----------------------------------- \\
+
+// le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
+
+print_board();
+
+
+
+//  ----------------------------------------------------- Fin ------------------------------------------------------------- \\
 

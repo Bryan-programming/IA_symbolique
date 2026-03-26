@@ -42,6 +42,8 @@ class PrologSession {
     this.session.query(code)
     this.session.answer(rep => {
 	console.log(pl.format_answer(rep))
+
+  // à savoir : ici Message est la variable à passer dans le predicat qui fournit la reponse
 	this.response = rep.lookup("Message")
     })
   }
@@ -50,9 +52,19 @@ class PrologSession {
      this.response = ''
   }
     
-    get_response() {
-     console.log("Essai de retour de response")
-     console.log(this.response)
-     return this.response }
+  get_response() {
+    console.log("Essai de retour de response")
+    console.log(this.response)
+    return this.response }
+  
+  // j'ai crée cette fonction pour convertir la reponse prolog(list de list d'ascii) en string pour bien l'affiché  
+  runQuery(question){
+    this.reset_response();
+    this.query(question);
+    // Rappel: problème de fonction asychrone à regler dans cette partie
+    const text = this.get_response();
+    addAgentMessage(text);
+  }
+
     
 }
