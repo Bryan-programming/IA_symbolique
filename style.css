@@ -1,3 +1,4 @@
+
 /* From https://www.youtube.com/watch?v=-k-PgvbktX4
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
@@ -72,7 +73,7 @@ body{
   align-items: center;
   flex-direction: column;
   width: 40%;
-  background-color: grey;
+  background-color: rgb(36, 36, 36);
 }
 
 .chat-form{
@@ -132,7 +133,7 @@ body{
 }
 
 .message{
-    background-color: #9db0b0;
+    background-color: white;
     padding: 10px;
     border-radius: 10px;
     margin: 10px;
@@ -148,4 +149,48 @@ body{
 
 .user{
     align-self: flex-end;
+}
+
+
+
+/*style du plateau de jeu */
+
+#plateau table {
+      border-collapse: 0px;
+      margin:center;
+
+  }
+
+.box {
+
+    background-color: white;
+    border: 2px solid black;
+    padding: 60px;
+    margin: 0 auto;
+    border-radius: 20px;
+}
+
+.case {
+      width: 45px;
+      height: 45px;
+      background-color: #8B4513;
+      border: 2px solid #333;
+}
+
+.pont-h {
+      width: 40px;
+      height: 30px;
+      background-color: lightgrey;
+}
+
+.pont-v {
+      width: 4px;
+      height: 40px;
+      background-color: lightgrey;
+  }
+
+.coin {
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
 }

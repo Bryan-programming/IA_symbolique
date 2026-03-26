@@ -2802,7 +2802,7 @@
 
 	// Check if a variables has attributes
 	Substitution.prototype.has_attributes = function( variable ) {
-		return this.attrs[variable] && this.attrs[variable] !== {};
+		return this.attrs[variable] && this.attrs[variable] != {};
 	}
 
 
