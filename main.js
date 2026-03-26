@@ -245,14 +245,13 @@ function placerLutin(x, y, couleur) {
     cas.appendChild(lutin);//ajout du div cree a la case parente
 }
 
-// placer les lutins pour le test 
+print_board();
+
+// placer les lutins pour le test
     placerLutin(1, 1, 'vert');
     placerLutin(6, 6, 'rouge');
     placerLutin(1, 6, 'bleu');
     placerLutin(6, 1, 'jaune');
-
-
-print_board();
 
 
 
