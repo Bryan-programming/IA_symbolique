@@ -14,12 +14,12 @@
 html {
   font-family: "Montserrat";
   font-size: 20px;
-  height: 600px;
+  height: 100%;
 
 }
 
 body{
-    height: 600px;
+    height: 100%;
 }
 
 section {
@@ -36,6 +36,7 @@ section {
 .left-part{
     width: 66%;
     height: 100%;
+    display: flex;
 }
 
 section h1 {
@@ -86,6 +87,7 @@ body{
   flex-direction: column;
   width: 40%;
   background-color: rgb(36, 36, 36);
+  height: 100%;
 }
 
 .chat-form{
@@ -175,13 +177,19 @@ body{
 }
 
 .box {
-    height: 90%;
+    height: 70%;
     background-color: white;
     border: 2px solid black;
     padding: 30px;
     margin: 0 auto;
     border-radius: 20px;
     width: 500px;
+    display: flex;
+    align-items: center;
+    min-height: 500px;
+    max-height: 550px;
+    position: relative;
+    top: 10%;
 }
 
 .case {
