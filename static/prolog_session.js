@@ -65,6 +65,5 @@ class PrologSession {
     const text = this.get_response();
     addAgentMessage(text);
   }
-
-    
+  
 }

@@ -96,7 +96,7 @@ speech.rate = 1;
 speech.pitch = 1;
 
 const plSession = new PrologSession();
-var question = 'c';
+var question = '';
 var response = '';
 var realresponse = '';
 
@@ -157,7 +157,7 @@ const ascii_list_of_question= toArray(question);
 const question_parse = `lire_question([${ascii_list_of_question}],LMots),
                                   produire_reponse(LMots,L_reponse),
                                         transformer_reponse_en_string(L_reponse,Temp),
-                                               atom_codes(Message,Temp).`;
+                                              atom_codes(Message,Temp).`;
   addUserMessage(question);
   // c'est ici que  j'envoi la requette à le session prolog 
   // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
@@ -247,14 +247,28 @@ function placerLutin(x, y, couleur) {
 
 print_board();
 
-// placer les lutins pour le test
+// placer les lutins pour le test 
     placerLutin(1, 1, 'vert');
     placerLutin(6, 6, 'rouge');
     placerLutin(1, 6, 'bleu');
     placerLutin(6, 1, 'jaune');
 
 
+// template de code pour les requetes dans le fichier prolog 
 
+// Reda et Rayane utilisez la session  plSession pour travailler: pour faire des requetes
+// faites un plSession.query(code) et pour recuperer la reponse vous faites plSession. get_response()
+
+//  Representation prolog que propose adam pour le plateau (ca va directement matcher avec ce que vous faites en javascript)
+
+// casesPlateau(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1], 
+//         [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+//         [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
+//         [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
+//         [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
+//         [1,6],[2,6],[3,6],[4,6],[5,6],[6,6]].
+
+// postionLutinJoueur1(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1]].
 
 
 
