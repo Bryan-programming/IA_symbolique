@@ -176,66 +176,62 @@ const question_parse = `lire_question([${ascii_list_of_question}],LMots),
 
 
 
+// ici jai cree un autre session tau-prolog car c'ets plus simple et direct que la classe prolog session en utilisant des fonction predefinie et aussi pour separer entre le chatbot et le jeu
+const gameSession = pl.create(100000);
+const resultGame = gameSession.consult(window.GAME);
 
 function print_board() {
-    /* ici j'ai suppose que le plateau sera une liste puisque on a pas encore la base de connaissance,
-     puis apres quand on la fait en transforme cette base de connaisance en liste comme celle ci .*/
 
+    let cases;
+    gameSession.query("casesPlateau(L).");
+    gameSession.answer(rep => {
+        cases = fromList(rep.lookup("L"));
 
-    const cases = [
-        [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
-        [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
-        [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
-        [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
-        [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
-        [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],
-    ];
+        let limit =cases[cases.length-1][1];
 
-    let limit =cases[cases.length-1][1];
+            const plateau = document.getElementById('plateau');
+            const table = document.createElement('table');
+            let row, rowPontV;
 
-    const plateau = document.getElementById('plateau');
-    const table = document.createElement('table');
-    let row, rowPontV;
+            cases.forEach(([x, y]) => {
 
-    cases.forEach(([x, y]) => {
+                if (x === 1) {
+                    row = document.createElement("tr");
+                    if (y !== limit) rowPontV = document.createElement("tr");
+                }
+                //creation des cases normal
+                const td = document.createElement("td");
+                td.classList.add("case");
+                td.dataset.x = x;
+                td.dataset.y = y;
+                row.appendChild(td);
 
-        if (x === 1) {
-            row = document.createElement("tr");
-            if (y !== limit) rowPontV = document.createElement("tr");
-        }
-        //creation des cases normal
-        const td = document.createElement("td");
-        td.classList.add("case");
-        td.dataset.x = x;
-        td.dataset.y = y;
-        row.appendChild(td);
+                if (x !==limit) {
+                    const tdPontH = document.createElement("td");
+                    tdPontH.classList.add("pont-h");
+                    row.appendChild(tdPontH);
+                }
+                // Ajouter les ponts vertical  à la ligne déjà créée
+                if (y !== limit) {
 
-        if (x !==limit) {
-            const tdPontH = document.createElement("td");
-            tdPontH.classList.add("pont-h");
-            row.appendChild(tdPontH);
-        }
-        // Ajouter les ponts vertical  à la ligne déjà créée
-        if (y !== limit) {
+                      //creattion des cases pour les  ponts verticale
+                      const tdPontV = document.createElement("td");
+                      tdPontV.classList.add("pont-v");
+                      rowPontV.appendChild(tdPontV);
 
-              //creattion des cases pour les  ponts verticale
-              const tdPontV = document.createElement("td");
-              tdPontV.classList.add("pont-v");
-              rowPontV.appendChild(tdPontV);
+                      //creation des espaces vide entre les cases
+                      const coin = document.createElement("td");
+                      coin.classList.add("coin");
+                      rowPontV.appendChild(coin);
+                }
 
-              //creation des espaces vide entre les cases
-              const coin = document.createElement("td");
-              coin.classList.add("coin");
-              rowPontV.appendChild(coin);
-        }
-
-        if (x === limit) {
-            table.appendChild(row);
-            if (y !== limit) table.appendChild(rowPontV);
-        }
+                if (x === limit) {
+                    table.appendChild(row);
+                    if (y !== limit) table.appendChild(rowPontV);
+                }
+            });
+            plateau.appendChild(table);
     });
-    plateau.appendChild(table);
-
 }
 
 function placerLutin(x, y, couleur) {
@@ -245,31 +241,85 @@ function placerLutin(x, y, couleur) {
     cas.appendChild(lutin);//ajout du div cree a la case parente
 }
 
+/*
+    place the 4 players on the board using the function placerLutin
+
+*/
+function placer_les_joueurs(){
+
+    let player1_luttins;
+    let player2_luttins;
+    let player3_luttins;
+    let player4_luttins;
+
+     // Joueur 1 vert
+    gameSession.query("postionLutinJoueur1(L).");
+    gameSession.answer(rep => {
+        player1_luttins = fromList(rep.lookup("L"));
+    });
+    player1_luttins.forEach(([x,y]) => {
+        placerLutin(x, y, 'vert');
+    });
+
+    // Joueur 2 rouge
+    gameSession.query("postionLutinJoueur2(L).");
+    gameSession.answer(rep => {
+        player2_luttins = fromList(rep.lookup("L"));
+    });
+    player2_luttins.forEach(([x,y]) => {
+        placerLutin(x, y, 'rouge');
+    });
+
+    // Joueur 3  bleu
+    gameSession.query("postionLutinJoueur3(L).");
+    gameSession.answer(rep => {
+        player3_luttins = fromList(rep.lookup("L"));
+    });
+    player3_luttins.forEach(([x,y]) => {
+        placerLutin(x, y, 'bleu');
+    });
+
+    // Joueur 4  jaune
+    gameSession.query("postionLutinJoueur4(L).");
+    gameSession.answer(rep => {
+        player4_luttins = fromList(rep.lookup("L"));
+    });
+    player4_luttins.forEach(([x,y]) => {
+        placerLutin(x, y, 'jaune');
+    });
+}
+
+
+
+/*
+   i copied this function from stackoverflow
+   spec : transforme a prolog liste_of_liste to a javascript aray of arrays
+*/
+function fromList(xs) {
+    var arr = [];
+    while (pl.type.is_term(xs) && xs.indicator === "./2") {
+        let value = xs.args[0];
+
+        if (pl.type.is_term(value) && (value.indicator === "./2" || value.indicator === "[]/0")) {
+            value = fromList(value);
+        } else if (value.value !== undefined) {
+            value = value.value;
+        }
+
+        arr.push(value);
+        xs = xs.args[1];
+    }
+
+    if (pl.type.is_term(xs) && xs.indicator === "[]/0") {
+        return arr;
+    }
+
+    return null;
+}
+
+
 print_board();
-
-// placer les lutins pour le test 
-    placerLutin(1, 1, 'vert');
-    placerLutin(6, 6, 'rouge');
-    placerLutin(1, 6, 'bleu');
-    placerLutin(6, 1, 'jaune');
-
-
-// template de code pour les requetes dans le fichier prolog 
-
-// Reda et Rayane utilisez la session  plSession pour travailler: pour faire des requetes
-// faites un plSession.query(code) et pour recuperer la reponse vous faites plSession. get_response()
-
-//  Representation prolog que propose adam pour le plateau (ca va directement matcher avec ce que vous faites en javascript)
-
-// casesPlateau(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1], 
-//         [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
-//         [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
-//         [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
-//         [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
-//         [1,6],[2,6],[3,6],[4,6],[5,6],[6,6]].
-
-// postionLutinJoueur1(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1]].
-
+placer_les_joueurs();
 
 
 //  ----------------------------------------------------- Fin ------------------------------------------------------------- \\
