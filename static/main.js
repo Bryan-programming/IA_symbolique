@@ -156,8 +156,7 @@ input.value = "";
 const ascii_list_of_question= toArray(question);
 const question_parse = `lire_question([${ascii_list_of_question}],LMots),
                                   produire_reponse(LMots,L_reponse),
-                                        transformer_reponse_en_string(L_reponse,Temp),
-                                              atom_codes(Message,Temp).`;
+                                        transformer_reponse_en_string(L_reponse,Message).`;
   addUserMessage(question);
   // c'est ici que  j'envoi la requette à le session prolog 
   // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
