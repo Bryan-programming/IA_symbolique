@@ -176,15 +176,11 @@ const question_parse = `lire_question([${ascii_list_of_question}],LMots),
 
 
 
-// ici jai cree un autre session tau-prolog car c'ets plus simple et direct que la classe prolog session en utilisant des fonction predefinie et aussi pour separer entre le chatbot et le jeu
-const gameSession = pl.create(100000);
-const resultGame = gameSession.consult(window.GAME);
-
 function print_board() {
 
     let cases;
-    gameSession.query("casesPlateau(L).");
-    gameSession.answer(rep => {
+    plSession.session.query("casesPlateau(L).");
+    plSession.session.answer(rep => {
         cases = fromList(rep.lookup("L"));
 
         let limit =cases[cases.length-1][1];
@@ -253,8 +249,8 @@ function placer_les_joueurs(){
     let player4_luttins;
 
      // Joueur 1 vert
-    gameSession.query("postionLutinJoueur1(L).");
-    gameSession.answer(rep => {
+    plSession.session.query("postionLutinJoueur1(L).");
+    plSession.session.answer(rep => {
         player1_luttins = fromList(rep.lookup("L"));
     });
     player1_luttins.forEach(([x,y]) => {
@@ -262,8 +258,8 @@ function placer_les_joueurs(){
     });
 
     // Joueur 2 rouge
-    gameSession.query("postionLutinJoueur2(L).");
-    gameSession.answer(rep => {
+    plSession.session.query("postionLutinJoueur2(L).");
+    plSession.session.answer(rep => {
         player2_luttins = fromList(rep.lookup("L"));
     });
     player2_luttins.forEach(([x,y]) => {
@@ -271,8 +267,8 @@ function placer_les_joueurs(){
     });
 
     // Joueur 3  bleu
-    gameSession.query("postionLutinJoueur3(L).");
-    gameSession.answer(rep => {
+    plSession.session.query("postionLutinJoueur3(L).");
+    plSession.session.answer(rep => {
         player3_luttins = fromList(rep.lookup("L"));
     });
     player3_luttins.forEach(([x,y]) => {
@@ -280,8 +276,8 @@ function placer_les_joueurs(){
     });
 
     // Joueur 4  jaune
-    gameSession.query("postionLutinJoueur4(L).");
-    gameSession.answer(rep => {
+    plSession.session.query("postionLutinJoueur4(L).");
+    plSession.session.answer(rep => {
         player4_luttins = fromList(rep.lookup("L"));
     });
     player4_luttins.forEach(([x,y]) => {

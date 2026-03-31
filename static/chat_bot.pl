@@ -27,6 +27,9 @@
 %         [1,6],[2,6],[3,6],[4,6],[5,6],[6,6]].
 
 
+
+
+
 produire_reponse([fin],L1) :-
     L1 = [merci, de, m, '\'', avoir, consulte], !.
 
