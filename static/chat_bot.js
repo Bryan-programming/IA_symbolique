@@ -318,5 +318,40 @@ postionLutinJoueur2(L):- L=[[1,2],[2,2],[3,1],[4,3],[5,2],[6,3]].
 postionLutinJoueur3(L):- L=[[1,5],[3,5],[2,5],[4,4],[5,5],[6,4]].
 postionLutinJoueur4(L):- L=[[1,6],[2,6],[3,3],[4,6],[5,6],[6,6]].
 
+
+%ici jeu propose cette representation des ponds
+%elle est comforme avec ce qui est demande a lennonce
+%modifier la si vous avez une autre idee
+
+
+init_ponts_h :- casesPlateau(Cases), init_ponts_h_aux(Cases).
+
+init_ponts_h_aux([]).
+init_ponts_h_aux([[X,Y]|Rest]) :-
+    X < 6, X1 is X + 1,
+    assertz(pont_h([X,Y],[X1,Y])),
+    init_ponts_h_aux(Rest).
+init_ponts_h_aux([[X,_]|Rest]) :-
+    X >= 6,
+    init_ponts_h_aux(Rest).
+
+% Initialise tous les ponts verticaux depuis casesPlateau
+
+init_ponts_v :- casesPlateau(Cases), init_ponts_v_aux(Cases).
+
+init_ponts_v_aux([]).
+init_ponts_v_aux([[X,Y]|Rest]) :-
+    Y < 6, Y1 is Y + 1,
+    assertz(pont_v([X,Y],[X,Y1])),
+    init_ponts_v_aux(Rest).
+init_ponts_v_aux([[_,Y]|Rest]) :-
+    Y >= 6,
+    init_ponts_v_aux(Rest).
+
+tous_ponts_h(L) :- findall([[X1,Y1],[X2,Y2]], pont_h([X1,Y1],[X2,Y2]), L).
+tous_ponts_v(L) :- findall([[X1,Y1],[X2,Y2]], pont_v([X1,Y1],[X2,Y2]), L).
+
+
+
 `
 

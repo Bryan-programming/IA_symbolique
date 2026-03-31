@@ -204,6 +204,8 @@ function print_board() {
                 if (x !==limit) {
                     const tdPontH = document.createElement("td");
                     tdPontH.classList.add("pont-h");
+                    tdPontH.dataset.x = x;
+                    tdPontH.dataset.y = y;
                     row.appendChild(tdPontH);
                 }
                 // Ajouter les ponts vertical  à la ligne déjà créée
@@ -212,6 +214,8 @@ function print_board() {
                       //creattion des cases pour les  ponts verticale
                       const tdPontV = document.createElement("td");
                       tdPontV.classList.add("pont-v");
+                      tdPontV.dataset.x=x;
+                      tdPontV.dataset.y=y;
                       rowPontV.appendChild(tdPontV);
 
                       //creation des espaces vide entre les cases
@@ -236,9 +240,36 @@ function placerLutin(x, y, couleur) {
     cas.appendChild(lutin);//ajout du div cree a la case parente
 }
 
+function placerPonth(x1, y1, x2, y2) {
+    const cas = document.querySelector(`.pont-h[data-x="${x1}"][data-y="${y1}"]`);
+
+
+    if (!cas) {
+        console.error("Element introuvable !");
+        return;
+    }
+
+    const pont_h = document.createElement('div');
+    pont_h.classList.add('pont-hadded');
+    cas.appendChild(pont_h);
+}
+
+function placerPontV(x1, y1, x2, y2) {
+    const cas = document.querySelector(`.pont-v[data-x="${x1}"][data-y="${y1}"]`);
+    console.log(cas);
+
+    if (!cas) {
+        console.error("Element introuvable !");
+        return;
+    }
+
+    const pont_v = document.createElement('div');
+    pont_v.classList.add('pont-vadded');
+    cas.appendChild(pont_v);
+}
+
 /*
     place the 4 players on the board using the function placerLutin
-
 */
 function placer_les_joueurs(){
 
@@ -313,8 +344,34 @@ function fromList(xs) {
 }
 
 
+function placer_les_ponts() {
+
+    // ici jai initialiser les ponts dans la base Prolog
+    plSession.session.query("init_ponts_h, init_ponts_v.");
+    plSession.session.answer(_ => {});
+
+    // ponts horizontales
+    plSession.session.query("tous_ponts_h(L).");
+    plSession.session.answer(rep => {
+        const ponts = fromList(rep.lookup("L"));
+        ponts.forEach(([[x1, y1],[x2, y2]]) => {
+            placerPonth(x1, y1, x2, y2);
+        });
+    });
+
+    // ponts verticales
+    plSession.session.query("tous_ponts_v(L).");
+    plSession.session.answer(rep => {
+        const ponts = fromList(rep.lookup("L"));
+        ponts.forEach(([[x1, y1],[x2, y2]]) => {
+            placerPontV(x1, y1, x2, y2);
+        });
+    });
+}
+
 print_board();
 placer_les_joueurs();
+placer_les_ponts();
 
 
 //  ----------------------------------------------------- Fin ------------------------------------------------------------- \\

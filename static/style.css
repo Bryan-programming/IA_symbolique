@@ -211,28 +211,19 @@ body{
       
 }
 
-/* Pont horizontal — ligne fine centrée */
+/* Pont horizontal — ligne fine centrée*/
 .pont-h {
     width: 50px;
     height: 12px;
-    background: linear-gradient(
-        to bottom,
-        transparent 40%,
-        peru 40% 60%,
-        transparent 60%
-    );
+    background: white;
+
 }
 
 /* Pont vertical — ligne fine centrée */
 .pont-v {
     width: 16px;
     height: 40px;
-    background: linear-gradient(
-        to right,
-        transparent 40%,
-        peru 40% 60%,
-        transparent 60%
-    );
+    background: white;
 }
 
 /*les cases transparent  pour representer le vide */
@@ -253,3 +244,25 @@ body{
 .rouge { background-color: #e74c3c; }
 .bleu  { background-color: #3498db; }
 .jaune { background-color: #f1c40f; }
+
+.pont-hadded {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        brown 40% 60%,
+        transparent 60%
+    );
+}
+
+.pont-vadded {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 40%,
+        brown 40% 60%,
+        transparent 60%
+    );
+}
