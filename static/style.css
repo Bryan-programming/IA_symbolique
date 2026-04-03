@@ -95,8 +95,8 @@ body{
 }
 
 #chat-input{
-    width: 75%;
-    height: 30px;
+    width: 65%;
+    height: 35px;
     border-radius: 12px;
     margin-left: 5px;
 }
@@ -112,7 +112,7 @@ body{
 }
 
 #chat-submit{
-    width: 20%;
+    width: 18%;
     height: 30px;
     border-radius: 8px;
 }
@@ -121,6 +121,17 @@ body{
     background-color: #292828;
     color: rgb(248, 248, 248);
     cursor: pointer;
+}
+
+#chat-voice{
+    width: 50px;
+    height: 30px;
+    border-radius: 5px;
+}
+
+#chat-voice:hover{
+    cursor: pointer;
+    scale: 0.8;
 }
 
 #map { 
@@ -266,3 +277,4 @@ body{
         transparent 60%
     );
 }
+

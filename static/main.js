@@ -104,49 +104,37 @@ var msg;
 
 let p = document.createElement("p");
 
+// j'ai essayer de faire des recherches et d'après elles l'event result se declenche quand le micro detecte du son
 recognition.addEventListener("result", (e) => {
 
-  texts.appendChild(p);
   const text = Array.from(e.results)
     .map((result) => result[0])
     .map((result) => result.transcript)
     .join("");
 
-  p.innerText = text;
   console.log(text)
-    if (e.results[0].isFinal) {
+    if (e.results[0].isFinal){
+      addUserMessage(text);
       console.log("text prefix")
-      console.log(text.slice(0,20))
-	if (text.slice(0,15).includes("bot") || text.slice(0,20).includes("pontu")) {
-      question = toArray(text.toLowerCase());
+      console.log(text.slice(0,20))	
+      ascii_list_of_question = toArray(text.toLowerCase());
+      const question_parse = `lire_question([${ascii_list_of_question}],LMots),
+                                  produire_reponse(LMots,L_reponse),
+                                        transformer_reponse_en_string(L_reponse,Message).`;
+      plSession.runQuery(question_parse);
       plSession.query(`
-                    lire_question([${question}], L_Mots), 
+                    lire_question([${ascii_list_of_question}], L_Mots), 
                     produire_reponse(L_Mots,L_reponse),
                     transformer_reponse_en_string(L_reponse,Message).
 		 `);
       response = plSession.get_response();
-      console.log("final response")
       real_response = fromArrayCodeToString(jmjCodeToString(response))
-      console.log(real_response)
-      p = document.createElement("p");
-      p.classList.add("replay");
-      p.innerText = real_response;
-      texts.appendChild(p);
-      p = document.createElement("p");
       speech.text = real_response;
       window.speechSynthesis.speak(speech);
-    }}
+    }
 
 });
 
-recognition.addEventListener("end", () => {
-  recognition.start();
-});
-
-
-
-
-recognition.start();
 
 const button= document.getElementById("chat-submit");
 button.addEventListener('click',()=>{
@@ -162,6 +150,14 @@ const question_parse = `lire_question([${ascii_list_of_question}],LMots),
   // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
   plSession.runQuery(question_parse);
 });
+
+// ici j'ajoute la fonctionnalité vocale. 
+const noteVocale = document.getElementById("chat-voice");
+noteVocale.addEventListener('click',()=>{
+      recognition.start();
+})
+
+
 
 
 
@@ -375,4 +371,3 @@ placer_les_ponts();
 
 
 //  ----------------------------------------------------- Fin ------------------------------------------------------------- \\
-

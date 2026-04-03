@@ -31,8 +31,8 @@ produire_reponse(L,Rep) :-
     call(Body), !.
 
 produire_reponse(_,[S1,S2]) :-
-    S1 = "Je ne sais pas. ",
-    S2 = "Les étudiants vont m'aider, vous le verrez".
+    S1 = "je n'ai pas bien compris votre question,",
+    S2 = "veuillez recommencer".
 
 match_pattern(Pattern,Lmots) :-
     sublist(Pattern,L_mots).
