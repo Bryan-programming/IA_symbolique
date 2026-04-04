@@ -63,39 +63,47 @@ prefixrem([],L,L).
 prefixrem([H|T],[H|L],Lr) :- prefixrem(T,L,Lr).
 
 
-
 % ----------------------------------------------------------------%
 
 nb_lutins(4).
 nb_equipes(4).
+write_to_chars(4,"4 ").
 
 mclef(commence,10).
 mclef(equipe,5).
-mclef(quipe,5).
+mclef(deplacer,5).
+mclef(ordre,7).
+mclef(pont, 3).
 
 % --------------------------------------------------------------- %
 
+/* note importante pour comprendre la fonction suivante
+le 2ème paramètre est un chiffre qui correspond au niveau de priorité d une règle
+plus le chiffre est bas, plus la règle est prioritère par rapport à d'autre ayant la même structure
+*/
+
 regle_rep(commence,1,
  [ qui, commence, le, jeu ],
- [ "par convention, c'est au joueur en charge des lutins verts de commencer la partie." ] ).
+ [ "par convention, c est au joueur en charge des lutins verts de commencer la partie." ] ).
 
-% ----------------------------------------------------------------% 
+% j'ai décidé de rajouter cet phrase en plus
+regle_rep(ordre,7,
+ [ [ ordre ], 3, [ joueurs ], 5 ],
+ [ "d abord les verts, puis les bleus, puis les jaunes puis les rouges" ] ).
 
 regle_rep(equipe,5,
-  [ [ combien ], 3, [ lutins ], 5, [ equipe ] ],
-  [ chaque, equipe, compte, X, lutins ]) :- 
+  [ [ combien ], 3, [ lutins ], 5, [ equipe ] ], % ici par contre 3 correspond au nombre de mots max autorisé avant de trouver lutins
+  [ "chaque equipe compte ", X_in_chars, " lutins" ]) :- 
+        nb_lutins(X),
+        write_to_chars(X,X_in_chars).
 
-       nb_lutins(X).
+regle_rep(deplacer,5,
+  [ [ deplacer ], 3, [ lutins ], 5, [ case ], 3, [occupee] ],
+  [ "non" ]). % attention à bien mettre des double quotes, ça m'a pris 4H pour trouver ce bug
 
-regle_rep(quipe,5,
-  [ [ combien ], 3, [ lutins ], 5, [ quipe ] ],
-  [ "chaque equipe compte ", X_in_chars, "lutins" ]) :- 
-
-       nb_lutins(X),
-       write_to_chars(X,X_in_chars).
-
-write_to_chars(4,"4 ").
-
+regle_rep(pont,3,
+  [ [ pont ], 3, [ retirer ], 5, [ deplace ], 3, [lutin] ],
+  [ "Il est permis de retirer le pont emprunte ou tout autre pont." ]).
 
 
 /* --------------------------------------------------------------------- */

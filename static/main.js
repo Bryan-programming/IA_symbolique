@@ -252,7 +252,7 @@ function placerPonth(x1, y1, x2, y2) {
 
 function placerPontV(x1, y1, x2, y2) {
     const cas = document.querySelector(`.pont-v[data-x="${x1}"][data-y="${y1}"]`);
-    console.log(cas);
+    // console.log(cas);
 
     if (!cas) {
         console.error("Element introuvable !");

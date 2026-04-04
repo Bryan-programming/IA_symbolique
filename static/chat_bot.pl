@@ -27,9 +27,6 @@
 %         [1,6],[2,6],[3,6],[4,6],[5,6],[6,6]].
 
 
-
-
-
 produire_reponse([fin],L1) :-
     L1 = [merci, de, m, '\'', avoir, consulte], !.
 
@@ -39,9 +36,10 @@ produire_reponse(L,Rep) :-
     match_pattern(Pattern,L), 
     call(Body), !.
 
+% j'au enlevé les single quotes par ce qu'ils fonts buguer le code
 produire_reponse(_,[S1,S2]) :-
-    S1 = "Je ne sais pas. ",
-    S2 = "Les étudiants vont m'aider, vous le verrez".
+    S1 = "je n ai pas bien compris votre question,",
+    S2 = "veuillez recommencer".
 
 match_pattern(Pattern,Lmots) :-
     sublist(Pattern,Lmots).
@@ -72,39 +70,57 @@ prefixrem([],L,L).
 prefixrem([H|T],[H|L],Lr) :- prefixrem(T,L,Lr).
 
 
-
 % ----------------------------------------------------------------%
 
 nb_lutins(4).
 nb_equipes(4).
+write_to_chars(4,"4 ").
 
+% mclef(M, N) donne une valeur de priorité N à un mots M, plus la valuer est faible, plus la priorité est élevé
 mclef(commence,10).
 mclef(equipe,5).
-mclef(quipe,5).
+mclef(deplacer,5).
+mclef(ordre,7).
+mclef(pont, 3).
 
 % --------------------------------------------------------------- %
+/* note importante pour comprendre la fonction suivante
+le 2ème paramètre est un chiffre qui correspond au niveau de priorité d une règle
+plus le chiffre est bas, plus la règle est prioritère par rapport à d'autre ayant la même structure
+*/
 
 regle_rep(commence,1,
  [ qui, commence, le, jeu ],
- [ "par convention, c'est au joueur en charge des lutins verts de commencer la partie." ] ).
+ [ "par convention, c est au joueur en charge des lutins verts de commencer la partie." ] ).
 
-% ----------------------------------------------------------------% 
+ regle_rep(ordre,7,
+ [ [ ordre ], 3, [ joueurs ], 5 ],
+ [ "d abord les verts, puis les bleus, puis les jaunes puis les rouges" ] ).
 
 regle_rep(equipe,5,
   [ [ combien ], 3, [ lutins ], 5, [ equipe ] ],
-  [ chaque, equipe, compte, X, lutins ]) :- 
-
-       nb_lutins(X).
-
-regle_rep(quipe,5,
-  [ [ combien ], 3, [ lutin ], 5, [ quipe ] ],
-  [ "chaque equipe compte ", X_in_chars, "lutins" ]) :- 
-
+  [ chaque, equipe, compte, X_in_chars, lutins ]) :- 
        nb_lutins(X),
        write_to_chars(X,X_in_chars).
 
-write_to_chars(4,"4 ").
+regle_rep(deplacer,5,
+  [ [ deplacer ], 3, [ lutins ], 5, [ case ], 3, [occupee] ], % ici par contre 3 correspond au nombre de mots max autorisé avant de trouver lutins
+  [ "non" ]).
 
+regle_rep(pont,3,
+  [ [ pont ], 3, [ retirer ], 5, [ deplace ], 3, [lutin] ],
+  [ "Il est permis de retirer le pont emprunte ou tout autre pont." ]).
+
+/* TODO : 
+
+je peux essayer de faire en sorte qu'une phrase avec le même sens mais avec des mots disposé de manière différente
+soit tout de même reconnue. Par example en utilisant des liste et avec le prédicat member
+
+On peut aussi réflechir à des questions supplémentaire que l'utilisateur voudrait poser et qu'on peut anticiper
+
+Sinon, la dernière phrase que l'utilisateur doit pouvoir écrire concerne le conseille de l'ia sur le prochain coup à jouer
+Elle doit pouvoir conseiller le meilleur déplacement de lutins ainsi que les ponts à retirer en fonctions de sa couleur.
+*/
 
 
 /* --------------------------------------------------------------------- */
@@ -367,9 +383,6 @@ espace(0).
 espace(N) :- N>0, Nn is N-1, write(' '), espace(Nn).
 
 
-
-
-
 /* --------------------------------------------------------------------- */
 /*                                                                       */
 /*                            TEST DE FIN                                */
@@ -407,9 +420,4 @@ pontuXL :-
 /* --------------------------------------------------------------------- */
 
 % :- pontuXL.
-
-
-
-
-
 
