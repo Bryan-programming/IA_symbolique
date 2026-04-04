@@ -21,11 +21,14 @@ main :-
 
 :-http_handler(root('main.js'),http_reply_file('./static/main.js',[]),
 []).
-
+% 
 :-http_handler(root('style.css'),http_reply_file('./static/style.css',[]),
 []).
 
 :-http_handler(root('pontu.jpg'),http_reply_file('./static/pontu.jpg',[]),
+[]).
+
+:-http_handler(root('logo.png'),http_reply_file('./static/logo.png',[]),
 []).
 
 :-http_handler(root(.),http_reply_file('./static/index.html',[]),
