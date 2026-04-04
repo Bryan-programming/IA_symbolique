@@ -57,14 +57,18 @@ class PrologSession {
     console.log(this.response)
     return this.response }
   
-  // j'ai crée cette fonction pour convertir la reponse prolog(list de list d'ascii) en string pour bien l'affiché  
+  // j'ai crée cette fonction pour convertir la reponse prolog(list de list d'ascii) en string pour bien l'afficher  
   runQuery(question){
+    console.log("question : " + question)
     this.reset_response();
-    this.query(question);
-    // Rappel: problème de fonction asychrone à regler dans cette partie
-    const text = this.get_response();
-    addAgentMessage(text);
+    plSession.session.query(question);
+    plSession.session.answer(rep => {
+        const listRep = fromList(rep.lookup("Message"));
+        console.log("listRep = " + listRep)
+        const  reponse = fromArrayCodeToString(listRep);
+        addAgentMessage(reponse);
+      })
+  
   }
 
-    
 }

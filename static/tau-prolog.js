@@ -2724,7 +2724,7 @@
 
 
 
-	// SUBSTITUTIONS
+	// SUBSTITUTIONS%
 
 	// Lookup variable
 	Substitution.prototype.lookup = function( variable ) {

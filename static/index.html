@@ -4,19 +4,15 @@
     <meta charset="UTF-8">
     <title>Le bot de PontuXL</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="pontu.jpg"> 
   </head>
 
   <body>
-    <section><!-- C'est ici que Rayanne et Reda trvaillerons-->
+    <section class="left-part"><!-- C'est ici que Rayanne et Reda trvaillerons-->
 
         <h1>Le bot de PontuXL</h1>
-        <p>Beta version</p>
-        <div class="container">
-          <p><img src="pontu.jpg" align="center" width=150></img></p>
-          <p id="annonce" onclick="annonceOut()"><br>A utiliser avec Google Chrome<br>
-          Cliquer sur ce paragraphe pour continuer</p>
-          <div class="texts"> 
-          </div>
+        <div id="annonce">
+
         </div>
 
          <div class="box">
@@ -25,8 +21,6 @@
              </div>
 
          </div>
-
-
 
     </section>
       
@@ -44,15 +38,18 @@
         <div class="chat-form" > <!--changer pour un div pour empêcher la page de se recharger ?-->
                 <input type="text" id="chat-input" class="chat-input" placeholder=" posez une question..."/>
                 <button type="button" class="chat-submit" id="chat-submit">send</button>
+                <img src="./logo.png" alt="image non disponible" id="chat-voice">
+                
+                
         </div>   
       </div>
 
       
   </body>
+  <script src="tau-prolog.js"></script>
+  <script src="prolog_session.js"></script>
+  <script src="chat_bot.js"></script>
+  <script src="main.js"></script>
 
-<script src="./tau-prolog.js"></script>
-<script src="./chat_bot.js"></script>    
-<script src="./prolog_session.js"></script>
-<script src="./main.js"></script>
 </html>
 

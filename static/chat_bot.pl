@@ -1,4 +1,3 @@
-const CHATBOT = String.raw`
 :- use_module(library(lists)).
 
 /* --------------------------------------------------------------------- */
@@ -20,22 +19,35 @@ const CHATBOT = String.raw`
 /*                                                                       */
 /* --------------------------------------------------------------------- */
 
+% cases(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
+%         [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+%         [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
+%         [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
+%         [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
+%         [1,6],[2,6],[3,6],[4,6],[5,6],[6,6]].
 
-produire_reponse([fin],[L1]) :-
+
+produire_reponse([fin],L1) :-
     L1 = [merci, de, m, '\'', avoir, consulte], !.
 
 produire_reponse(L,Rep) :-
     mclef(M,_), member(M,L),
     clause(regle_rep(M,_,Pattern,Rep),Body),
-    match_pattern(Pattern,P),
-    call(Body), !.
+    match_pattern(Pattern,L), 
+    call(Body),!.
 
+% j'au enlevé les single quotes par ce qu'ils fonts buguer le code
 produire_reponse(_,[S1,S2]) :-
-    S1 = "Je ne sais pas. ",
+<<<<<<< HEAD:chat_bot.pl
+    S1 = " Je ne sais pas. ",
     S2 = "Les étudiants vont m'aider, vous le verrez".
+=======
+    S1 = "je n ai pas bien compris votre question,",
+    S2 = "veuillez recommencer".
+>>>>>>> main:static/chat_bot.pl
 
 match_pattern(Pattern,Lmots) :-
-    sublist(Pattern,L_mots).
+    sublist(Pattern,Lmots).
 
 match_pattern(LPatterns,Lmots) :-
     match_pattern_dist([100|LPatterns],Lmots).
@@ -63,39 +75,57 @@ prefixrem([],L,L).
 prefixrem([H|T],[H|L],Lr) :- prefixrem(T,L,Lr).
 
 
-
 % ----------------------------------------------------------------%
 
 nb_lutins(4).
 nb_equipes(4).
+write_to_chars(4,"4 ").
 
+% mclef(M, N) donne une valeur de priorité N à un mots M, plus la valuer est faible, plus la priorité est élevé
 mclef(commence,10).
 mclef(equipe,5).
-mclef(quipe,5).
+mclef(deplacer,5).
+mclef(ordre,7).
+mclef(pont, 3).
 
 % --------------------------------------------------------------- %
+/* note importante pour comprendre la fonction suivante
+le 2ème paramètre est un chiffre qui correspond au niveau de priorité d une règle
+plus le chiffre est bas, plus la règle est prioritère par rapport à d'autre ayant la même structure
+*/
 
 regle_rep(commence,1,
  [ qui, commence, le, jeu ],
- [ "par convention, c'est au joueur en charge des lutins verts de commencer la partie." ] ).
+ [ "par convention, c est au joueur en charge des lutins verts de commencer la partie." ] ).
 
-% ----------------------------------------------------------------% 
+ regle_rep(ordre,7,
+ [ [ ordre ], 3, [ joueurs ], 5 ],
+ [ "d abord les verts, puis les bleus, puis les jaunes puis les rouges" ] ).
 
 regle_rep(equipe,5,
   [ [ combien ], 3, [ lutins ], 5, [ equipe ] ],
-  [ chaque, equipe, compte, X, lutins ]) :- 
-
-       nb_lutins(X).
-
-regle_rep(quipe,5,
-  [ [ combien ], 3, [ lutins ], 5, [ quipe ] ],
-  [ "chaque equipe compte ", X_in_chars, "lutins" ]) :- 
-
+  [ chaque, equipe, compte, X_in_chars, lutins ]) :- 
        nb_lutins(X),
        write_to_chars(X,X_in_chars).
 
-write_to_chars(4,"4 ").
+regle_rep(deplacer,5,
+  [ [ deplacer ], 3, [ lutins ], 5, [ case ], 3, [occupee] ], % ici par contre 3 correspond au nombre de mots max autorisé avant de trouver lutins
+  [ "non" ]).
 
+regle_rep(pont,3,
+  [ [ pont ], 3, [ retirer ], 5, [ deplace ], 3, [lutin] ],
+  [ "Il est permis de retirer le pont emprunte ou tout autre pont." ]).
+
+/* TODO : 
+
+je peux essayer de faire en sorte qu'une phrase avec le même sens mais avec des mots disposé de manière différente
+soit tout de même reconnue. Par example en utilisant des liste et avec le prédicat member
+
+On peut aussi réflechir à des questions supplémentaire que l'utilisateur voudrait poser et qu'on peut anticiper
+
+Sinon, la dernière phrase que l'utilisateur doit pouvoir écrire concerne le conseille de l'ia sur le prochain coup à jouer
+Elle doit pouvoir conseiller le meilleur déplacement de lutins ainsi que les ponts à retirer en fonctions de sa couleur.
+*/
 
 
 /* --------------------------------------------------------------------- */
@@ -107,8 +137,10 @@ write_to_chars(4,"4 ").
 
 % lire_question(L_Mots)
 
-lire_question(Input, LMots) :- read_atomics(Input, LMots).
+% Pour tau-Prolog avec Javascript
+lire_question(LMots) :- read_atomics(LMots).
 
+% Pour bot en ligne
 
 
 /*****************************************************************************/
@@ -273,9 +305,9 @@ clean_string([C|[]],[C]).
 %  Reads a line of input, removes all punctuation characters, and converts
 %  it into a list of atomic terms, e.g., [this,is,an,example].
 
-read_atomics(Input, ListOfAtomics) :-
-
-    clean_string(Input,Cleanstring),
+read_atomics(ListOfAtomics) :-
+    read_lc_string(String),
+    clean_string(String,Cleanstring),
     extract_atomics(Cleanstring,ListOfAtomics).
 
 
@@ -295,12 +327,106 @@ flatten_strings_in_sentences([W|T],S) :-
     append(L1,L2,S).
 
 % Pour SWI-Prolog
-% string_as_list(W,L) :- string_to_list(W,L).
+string_as_list(W,L) :- string_to_list(W,L).
 
 
 % Pour tau-Prolog
-string_as_list(W,W).
+% string_as_list(W,W).
 
 
-`
+/*    /!\ ci-après différent du code javascript
+*/
 
+/* --------------------------------------------------------------------- */
+/*                                                                       */
+/*        ECRIRE_REPONSE : ecrit une suite de lignes de texte            */
+/*                                                                       */
+/* --------------------------------------------------------------------- */
+
+
+ecrire_reponse(L) :-
+   nl, write('PBot :'),
+   ecrire_ligne(L,1,1,Mf).
+
+% ecrire_ligne(Li,Mi,Ei,Mf)
+% input : Li, liste de mots a ecrire
+%         Mi, indique si le premier caractere du premier mot 
+%            doit etre mis en majuscule (1 si oui, 0 si non)
+%         Ei, indique le nombre d'espaces avant ce premier mot 
+% output : Mf, booleen tel que decrit ci-dessus a appliquer 
+%          a la ligne suivante, si elle existe
+
+ecrire_ligne([],M,_,M) :- 
+   nl.
+
+ecrire_ligne([M|L],Mi,Ei,Mf) :-
+   ecrire_mot(M,Mi,Maux,Ei,Eaux),
+   ecrire_ligne(L,Maux,Eaux,Mf).
+
+% ecrire_mot(M,B1,B2,E1,E2)
+% input : M, le mot a ecrire
+%         B1, indique s'il faut une majuscule (1 si oui, 0 si non)
+%         E1, indique s'il faut un espace avant le mot (1 si oui, 0 si non)
+% output : B2, indique si le mot suivant prend une majuscule
+%          E2, indique si le mot suivant doit etre precede d'un espace
+
+ecrire_mot('.',_,1,_,1) :-
+   write('. '), !.
+ecrire_mot('\'',X,X,_,0) :-
+   write('\''), !.
+ecrire_mot(',',X,X,E,1) :-
+   espace(E), write(','), !.
+ecrire_mot(M,0,0,E,1) :-
+   espace(E), write(M).
+ecrire_mot(M,1,0,E,1) :-
+   name(M,[C|L]),
+   D is C - 32,
+   name(N,[D|L]),
+   espace(E), write(N).
+
+espace(0).
+espace(N) :- N>0, Nn is N-1, write(' '), espace(Nn).
+
+
+/* --------------------------------------------------------------------- */
+/*                                                                       */
+/*                            TEST DE FIN                                */
+/*                                                                       */
+/* --------------------------------------------------------------------- */
+
+fin(L) :- member(fin,L).
+
+
+/* --------------------------------------------------------------------- */
+/*                                                                       */
+/*                         BOUCLE PRINCIPALE                             */
+/*                                                                       */
+/* --------------------------------------------------------------------- */
+
+pontuXL :- 
+
+   nl, nl, nl,
+   write('Bonjour, je suis PBot, le bot explicateur du jeu PontuXL.'), nl,
+   write('En quoi puis-je vous etre utile ?'), 
+   nl, nl, 
+
+   repeat,
+      write('Vous : '), ttyflush,
+      lire_question(L_Mots),
+      produire_reponse(L_Mots,L_reponse),
+      ecrire_reponse(L_reponse), nl,
+   fin(L_Mots), !.
+   
+
+/* --------------------------------------------------------------------- */
+/*                                                                       */
+/*             ACTIVATION DU PROGRAMME APRES COMPILATION                 */
+/*                                                                       */
+/* --------------------------------------------------------------------- */
+
+<<<<<<< HEAD:chat_bot.pl
+:- pontuXL.
+=======
+% :- pontuXL.
+
+>>>>>>> main:static/chat_bot.pl
