@@ -252,7 +252,6 @@ function placerPonth(x1, y1, x2, y2) {
 
 function placerPontV(x1, y1, x2, y2) {
     const cas = document.querySelector(`.pont-v[data-x="${x1}"][data-y="${y1}"]`);
-    // console.log(cas);
 
     if (!cas) {
         console.error("Element introuvable !");
@@ -262,6 +261,12 @@ function placerPontV(x1, y1, x2, y2) {
     const pont_v = document.createElement('div');
     pont_v.classList.add('pont-vadded');
     cas.appendChild(pont_v);
+}
+
+function refresh_joueurs() {
+    document.querySelectorAll('.lutin').forEach(l => l.remove());
+    placer_les_joueurs();
+    move_luttin();
 }
 
 /*
@@ -277,40 +282,39 @@ function placer_les_joueurs(){
      // Joueur 1 vert
     plSession.session.query("postionLutinJoueur1(L).");
     plSession.session.answer(rep => {
-        player1_luttins = fromList(rep.lookup("L"));
+        if (rep && rep !== false) player1_luttins = fromList(rep.lookup("L"));
     });
-    player1_luttins.forEach(([x,y]) => {
+    if (player1_luttins) player1_luttins.forEach(([x,y]) => {
         placerLutin(x, y, 'vert');
     });
 
     // Joueur 2 rouge
     plSession.session.query("postionLutinJoueur2(L).");
     plSession.session.answer(rep => {
-        player2_luttins = fromList(rep.lookup("L"));
+        if (rep && rep !== false) player2_luttins = fromList(rep.lookup("L"));
     });
-    player2_luttins.forEach(([x,y]) => {
+    if (player2_luttins) player2_luttins.forEach(([x,y]) => {
         placerLutin(x, y, 'rouge');
     });
 
     // Joueur 3  bleu
     plSession.session.query("postionLutinJoueur3(L).");
     plSession.session.answer(rep => {
-        player3_luttins = fromList(rep.lookup("L"));
+        if (rep && rep !== false) player3_luttins = fromList(rep.lookup("L"));
     });
-    player3_luttins.forEach(([x,y]) => {
+    if (player3_luttins) player3_luttins.forEach(([x,y]) => {
         placerLutin(x, y, 'bleu');
     });
 
     // Joueur 4  jaune
     plSession.session.query("postionLutinJoueur4(L).");
     plSession.session.answer(rep => {
-        player4_luttins = fromList(rep.lookup("L"));
+        if (rep && rep !== false) player4_luttins = fromList(rep.lookup("L"));
     });
-    player4_luttins.forEach(([x,y]) => {
+    if (player4_luttins) player4_luttins.forEach(([x,y]) => {
         placerLutin(x, y, 'jaune');
     });
 }
-
 
 
 /*
@@ -331,7 +335,6 @@ function fromList(xs) {
         arr.push(value);
         xs = xs.args[1];
     }
-
     if (pl.type.is_term(xs) && xs.indicator === "[]/0") {
         return arr;
     }
@@ -341,8 +344,6 @@ function fromList(xs) {
 
 
 function placer_les_ponts() {
-
-    // ici jai initialiser les ponts dans la base Prolog
     plSession.session.query("init_ponts_h, init_ponts_v.");
     plSession.session.answer(_ => {});
 
@@ -365,9 +366,116 @@ function placer_les_ponts() {
     });
 }
 
-print_board();
-placer_les_joueurs();
-placer_les_ponts();
+
+//fonction concernants les deplacements des luttins -------------------------------------------------------------------------------------------------------------------------------
+
+
+function showArrows() {
+
+    const panel = document.getElementById("arrow-panel");
+    panel.innerHTML = "";
+
+    ["UP", "DOWN", "LEFT", "RIGHT"].forEach(dir => {
+        const btn = document.createElement("div");
+        btn.classList.add("arrow", dir.toLowerCase());
+        btn.textContent = dir;
+        panel.appendChild(btn);
+    });
+}
+
+function activatearrows(lutin){
+
+         let numJoueur;
+         const color  = lutin.classList[1] ;
+
+         //ici je recupere la couleur du lutin pour decdier le numero du joueur
+         if( color==="vert")numJoueur=1;
+         else if ( color==="rouge")numJoueur=2;
+         else if ( color==="bleu")numJoueur=3;
+         else numJoueur=4;
+
+         // ici je recupere les corddonees de la case source du lutin qu'on veut deplacer
+         const xs = lutin.parentElement.dataset.x;
+         const ys = lutin.parentElement.dataset.y;
+
+         const allarrows = document.querySelectorAll(".arrow");
+         allarrows.forEach(arrow=>{
+                arrow.addEventListener("click",function(){
+                      console.log("i was called");
+                      const direction = this.classList[1];
+
+                      if (direction.toLowerCase() ==="up"){
+                            plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, up, Xf, Yf).`);
+                            plSession.session.answer(rep => {
+                                if (rep && rep !== false) {
+                                    refresh_joueurs();
+                                }
+                            });
+                      }
+                      if (direction.toLowerCase() ==="down"){
+                              plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, down, Xf, Yf).`);
+                              plSession.session.answer(rep => {
+                                  if (rep && rep !== false) {
+                                    refresh_joueurs();
+                                  }
+                              });
+                      }
+                      if (direction.toLowerCase() ==="right"){
+                                 plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, right, Xf, Yf).`);
+                                 plSession.session.answer(rep => {
+                                   if (rep && rep !== false) {
+                                      refresh_joueurs();
+                                   }
+                                 });
+                      }
+                      if  (direction.toLowerCase() ==="left"){
+                                plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, left, Xf, Yf).`);
+                                plSession.session.answer(rep => {
+                                   if (rep && rep !== false) {
+                                       refresh_joueurs();
+                                       console.log("i did succed i left ");
+                                   }
+                                });
+                      }
+                });
+         });
+}
+
+/*
+    je me suis inspirer de cette video : "https://youtu.be/wX0pb6CBS-c" pour pouvoir detecter un "double click" en dehors d'une div
+    cad quand je clique sur un joueur je n'execute le move que si je clique sur la flèche de direction
+
+*/
+function  move_luttin(){
+
+          document.querySelectorAll(".lutin").forEach(lutin=>{
+                    lutin.addEventListener("click",function (event){
+                           const caseDiv = event.target.closest(".case");
+                                      const source = [
+                                          caseDiv.dataset.x,
+                                          caseDiv.dataset.y
+                                      ];
+                                      showArrows();
+                                      activatearrows(lutin);
+
+                    });
+          })
+}
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+function main(){
+     print_board();
+     placer_les_joueurs();
+     move_luttin();
+     placer_les_ponts();
+
+}
+
+main();
+
 
 
 //  ----------------------------------------------------- Fin ------------------------------------------------------------- \\

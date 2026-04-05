@@ -314,6 +314,11 @@ string_as_list(W,W).
 /*                        FAITS DU JEU PONTU                             */
 /* --------------------------------------------------------------------- */
 
+:- dynamic(postionLutinJoueur1/1).
+:- dynamic(postionLutinJoueur2/1).
+:- dynamic(postionLutinJoueur3/1).
+:- dynamic(postionLutinJoueur4/1).
+
 casesPlateau(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
         [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
         [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
@@ -321,10 +326,10 @@ casesPlateau(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
         [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
         [1,6],[2,6],[3,6],[4,6],[5,6],[6,6]].
 
-postionLutinJoueur1(L):- L=[[1,1],[2,1],[3,4],[4,1],[5,1],[6,1]].
-postionLutinJoueur2(L):- L=[[1,2],[2,2],[3,1],[4,3],[5,2],[6,3]].
-postionLutinJoueur3(L):- L=[[1,5],[3,5],[2,5],[4,4],[5,5],[6,4]].
-postionLutinJoueur4(L):- L=[[1,6],[2,6],[3,3],[4,6],[5,6],[6,6]].
+postionLutinJoueur1([[1,1],[2,1],[3,4],[4,1],[5,1],[6,1]]).
+postionLutinJoueur2([[1,2],[2,2],[3,1],[4,3],[5,2],[6,3]]).
+postionLutinJoueur3([[1,5],[3,5],[2,5],[4,4],[5,5],[6,4]]).
+postionLutinJoueur4([[1,6],[2,6],[3,3],[4,6],[5,6],[6,6]]).
 
 
 %ici jeu propose cette representation des ponds
@@ -343,8 +348,6 @@ init_ponts_h_aux([[X,_]|Rest]) :-
     X >= 6,
     init_ponts_h_aux(Rest).
 
-% Initialise tous les ponts verticaux depuis casesPlateau
-
 init_ponts_v :- casesPlateau(Cases), init_ponts_v_aux(Cases).
 
 init_ponts_v_aux([]).
@@ -359,6 +362,94 @@ init_ponts_v_aux([[_,Y]|Rest]) :-
 tous_ponts_h(L) :- findall([[X1,Y1],[X2,Y2]], pont_h([X1,Y1],[X2,Y2]), L).
 tous_ponts_v(L) :- findall([[X1,Y1],[X2,Y2]], pont_v([X1,Y1],[X2,Y2]), L).
 
+
+%fonction pour le deplacement des luttins-------------------------------------------------------------------------------
+
+occupe(X,Y) :-
+    postionLutinJoueur1(L1),
+    member([X,Y], L1).
+
+occupe(X,Y) :-
+    postionLutinJoueur2(L2),
+    member([X,Y], L2).
+
+occupe(X,Y) :-
+    postionLutinJoueur3(L3),
+    member([X,Y], L3).
+
+occupe(X,Y) :-
+    postionLutinJoueur4(L4),
+    member([X,Y], L4).
+
+dans_plateau(X,Y) :-
+    X >= 1, X =< 6,
+    Y >= 1, Y =< 6.
+
+
+pont_entre(X, Y, right, X2, Y) :-
+    X2 is X + 1,
+    pont_h([X,Y],[X2,Y]).
+
+pont_entre(X, Y, left, X2, Y) :-
+    X2 is X - 1,
+    pont_h([X2,Y],[X,Y]).
+
+pont_entre(X, Y, up, X, Y2) :-
+    Y2 is Y - 1,
+    pont_v([X,Y2],[X,Y]).
+
+pont_entre(X, Y, down, X, Y2) :-
+    Y2 is Y + 1,
+    pont_v([X,Y],[X,Y2]).
+
+
+
+%  calcule la case finale apres glissement
+
+calculer_destinationcase(X, Y, Dir, Xf, Yf) :-
+    pont_entre(X, Y, Dir, X2, Y2),
+    dans_plateau(X2, Y2),
+    \+ occupe(X2, Y2), !,
+    calculer_destinationcase(X2, Y2, Dir, Xf, Yf).
+
+calculer_destinationcase(X, Y, _, X, Y).
+
+
+
+deplacer_lutin(1, Xs, Ys, Xf, Yf) :-
+    postionLutinJoueur1(L),
+    select([Xs,Ys], L, LTemp), !,
+    retract(postionLutinJoueur1(L)),
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    assertz(postionLutinJoueur1(NouvelleL)).
+
+deplacer_lutin(2, Xs, Ys, Xf, Yf) :-
+    postionLutinJoueur2(L),
+    select([Xs,Ys], L, LTemp), !,
+    retract(postionLutinJoueur2(L)),
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    assertz(postionLutinJoueur2(NouvelleL)).
+
+deplacer_lutin(3, Xs, Ys, Xf, Yf) :-
+    postionLutinJoueur3(L),
+    select([Xs,Ys], L, LTemp), !,
+    retract(postionLutinJoueur3(L)),
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    assertz(postionLutinJoueur3(NouvelleL)).
+
+deplacer_lutin(4, Xs, Ys, Xf, Yf) :-
+    postionLutinJoueur4(L),
+    select([Xs,Ys], L, LTemp), !,
+    retract(postionLutinJoueur4(L)),
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    assertz(postionLutinJoueur4(NouvelleL)).
+
+
+% Calcule la case finale et met à jour la base de connaissance
+
+deplacement(Joueur, Xs, Ys, Dir, Xf, Yf) :-
+    calculer_destinationcase(Xs, Ys, Dir, Xf, Yf),
+    deplacer_lutin(Joueur, Xs, Ys, Xf, Yf).
 
 
 `
