@@ -1,4 +1,3 @@
-
 /* From https://www.youtube.com/watch?v=-k-PgvbktX4
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
@@ -194,9 +193,9 @@ body{
     justify-content: center;
     gap: 5px;
     width: 100%;
-
     margin-left:50px;
 }
+
 .box {
     height: 70%;
     background-color: white;
@@ -230,15 +229,14 @@ body{
       height: 30px;
       border-radius: 50%;
       border: 2px solid #333;
-      
 }
 
-/* Pont horizontal — ligne fine centrée*/
+/* Pont horizontal — ligne fine centrée */
 .pont-h {
     width: 50px;
     height: 12px;
     background: white;
-
+    position: relative;
 }
 
 /* Pont vertical — ligne fine centrée */
@@ -246,6 +244,7 @@ body{
     width: 16px;
     height: 40px;
     background: white;
+    position: relative;
 }
 
 /*les cases transparent  pour representer le vide */
@@ -267,6 +266,7 @@ body{
 .bleu  { background-color: #3498db; }
 .jaune { background-color: #f1c40f; }
 
+/* 1er pont — marron */
 .pont-hadded {
     width: 100%;
     height: 100%;
@@ -289,6 +289,120 @@ body{
     );
 }
 
+/* 2ème pont superposé — bleu foncé */
+.pont-hadded:nth-child(2) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        darkblue 40% 60%,
+        transparent 60%
+    );
+}
+
+.pont-vadded:nth-child(2) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 40%,
+        darkblue 40% 60%,
+        transparent 60%
+    );
+}
+
+/* 3ème pont superposé — violet */
+.pont-hadded:nth-child(3) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        purple 40% 60%,
+        transparent 60%
+    );
+}
+
+.pont-vadded:nth-child(3) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 40%,
+        purple 40% 60%,
+        transparent 60%
+    );
+}
+
+/* 4ème pont superposé — vert foncé */
+.pont-hadded:nth-child(4) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        darkgreen 40% 60%,
+        transparent 60%
+    );
+}
+
+.pont-vadded:nth-child(4) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 40%,
+        darkgreen 40% 60%,
+        transparent 60%
+    );
+}
+/* 5ème pont superposé — orange */
+.pont-hadded:nth-child(5) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        darkorange 40% 60%,
+        transparent 60%
+    );
+}
+
+.pont-vadded:nth-child(5) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 40%,
+        darkorange 40% 60%,
+        transparent 60%
+    );
+}
 
 /*section pour les directions (arrows up/down/left/right)   */
 #arrow-panel {
@@ -314,5 +428,4 @@ body{
 
 .arrow:hover{
     background: red;
-
 }

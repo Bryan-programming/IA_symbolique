@@ -158,15 +158,9 @@ noteVocale.addEventListener('click',()=>{
 })
 
 
-
-
-
-
-
 //  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog----------------------------------- \\
 
 // le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
-
 
 // Génère un identifiant unique normalisé pour un pont (coordonnées minimales en premier)
 function pontId(x1, y1, x2, y2) {
@@ -189,6 +183,11 @@ function fromPontTerm(term) {
         term.args[2].value,
         term.args[3].value
     ];
+}
+
+// Vérifie si des ponts sont encore en attente de traitement
+function pontsEnAttente() {
+    return document.getElementById("arrow-panel").querySelectorAll('strong').length > 0;
 }
 
 
@@ -437,6 +436,14 @@ function tournerPontDOM(x1, y1, x2, y2, ax, ay, sens) {
     }
 }
 
+// Vérifie si le panneau est vide et réaffiche les flèches si c'est le cas
+function verifierPanneauVide(panel) {
+    const pontsRestants = panel.querySelectorAll('strong');
+    if (pontsRestants.length === 0) {
+        panel.innerHTML = "";
+    }
+}
+
 // Affiche le panneau d'actions pour chaque pont traversé
 function proposer_actions_ponts(ponts) {
     const panel = document.getElementById("arrow-panel");
@@ -463,7 +470,8 @@ function proposer_actions_ponts(ponts) {
             plSession.session.query(`retirer_pont(${x1}, ${y1}, ${x2}, ${y2}).`);
             plSession.session.answer(_ => {});
             supprimerPontDOM(x1, y1, x2, y2);
-            div.remove(); // supprime seulement ce pont du panneau
+            div.remove();
+            verifierPanneauVide(panel);
         });
         div.appendChild(btnRetirer);
 
@@ -493,6 +501,7 @@ function proposer_actions_ponts(ponts) {
                     if (rep && rep !== false) {
                         tournerPontDOM(x1, y1, x2, y2, lax, lay, lsens);
                         div.remove();
+                        verifierPanneauVide(panel);
                     } else {
                         btn.style.opacity = "0.3";
                         btn.disabled = true;
@@ -506,7 +515,9 @@ function proposer_actions_ponts(ponts) {
     });
 }
 
+
 //fonction concernants les deplacements des lutins -------------------------------------------------------------------------------------------------------------------------------
+
 
 function showArrows() {
 
@@ -563,23 +574,22 @@ function activatearrows(lutin){
     cad quand je clique sur un joueur je n'execute le move que si je clique sur la flèche de direction
 
 */
-function  move_luttin(){
+function move_luttin(){
+    document.querySelectorAll(".lutin").forEach(lutin=>{
+        lutin.addEventListener("click", function (event) {
+            // Bloque si des ponts sont encore en attente de traitement
+            if (pontsEnAttente()) return;
 
-          document.querySelectorAll(".lutin").forEach(lutin=>{
-                    lutin.addEventListener("click",function (event){
-                           const caseDiv = event.target.closest(".case");
-                                      const source = [
-                                          caseDiv.dataset.x,
-                                          caseDiv.dataset.y
-                                      ];
-                                      showArrows();
-                                      activatearrows(lutin);
-
-                    });
-          })
+            const caseDiv = event.target.closest(".case");
+            const source = [
+                caseDiv.dataset.x,
+                caseDiv.dataset.y
+            ];
+            showArrows();
+            activatearrows(lutin);
+        });
+    });
 }
-
-
 
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
