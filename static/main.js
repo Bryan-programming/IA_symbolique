@@ -168,7 +168,28 @@ noteVocale.addEventListener('click',()=>{
 // le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
 
 
+// Génère un identifiant unique normalisé pour un pont (coordonnées minimales en premier)
+function pontId(x1, y1, x2, y2) {
+    if (y1 === y2) {
+        const xmin = Math.min(x1, x2);
+        const xmax = Math.max(x1, x2);
+        return `h-${xmin}-${y1}-${xmax}-${y1}`;
+    } else {
+        const ymin = Math.min(y1, y2);
+        const ymax = Math.max(y1, y2);
+        return `v-${x1}-${ymin}-${x1}-${ymax}`;
+    }
+}
 
+// Convertit un terme Prolog pont(X1,Y1,X2,Y2) en tableau JS [x1,y1,x2,y2]
+function fromPontTerm(term) {
+    return [
+        term.args[0].value,
+        term.args[1].value,
+        term.args[2].value,
+        term.args[3].value
+    ];
+}
 
 
 function print_board() {
@@ -178,54 +199,59 @@ function print_board() {
     plSession.session.answer(rep => {
         cases = fromList(rep.lookup("L"));
 
-        let limit =cases[cases.length-1][1];
+        let limit = cases[cases.length-1][1];
 
-            const plateau = document.getElementById('plateau');
-            const table = document.createElement('table');
-            let row, rowPontV;
+        const plateau = document.getElementById('plateau');
+        const table = document.createElement('table');
+        let row, rowPontV;
 
-            cases.forEach(([x, y]) => {
+        // Grouper par Y et trier de 6 à 1 pour que Y=6 soit en haut visuellement
+        const lignes = {};
+        cases.forEach(([x, y]) => {
+            if (!lignes[y]) lignes[y] = [];
+            lignes[y].push(x);
+        });
 
-                if (x === 1) {
-                    row = document.createElement("tr");
-                    if (y !== limit) rowPontV = document.createElement("tr");
-                }
-                //creation des cases normal
+        Object.keys(lignes).map(Number).sort((a, b) => b - a).forEach(y => {
+            row = document.createElement("tr");
+            if (y !== 1) rowPontV = document.createElement("tr");
+
+            lignes[y].sort((a, b) => a - b).forEach(x => {
+                // case
                 const td = document.createElement("td");
                 td.classList.add("case");
                 td.dataset.x = x;
                 td.dataset.y = y;
                 row.appendChild(td);
 
-                if (x !==limit) {
+                // pont H
+                if (x !== limit) {
                     const tdPontH = document.createElement("td");
                     tdPontH.classList.add("pont-h");
                     tdPontH.dataset.x = x;
                     tdPontH.dataset.y = y;
                     row.appendChild(tdPontH);
                 }
-                // Ajouter les ponts vertical  à la ligne déjà créée
-                if (y !== limit) {
 
-                      //creattion des cases pour les  ponts verticale
-                      const tdPontV = document.createElement("td");
-                      tdPontV.classList.add("pont-v");
-                      tdPontV.dataset.x=x;
-                      tdPontV.dataset.y=y;
-                      rowPontV.appendChild(tdPontV);
+                // pont V (entre y-1 et y, donc data-y = y-1)
+                if (y !== 1) {
+                    const tdPontV = document.createElement("td");
+                    tdPontV.classList.add("pont-v");
+                    tdPontV.dataset.x = x;
+                    tdPontV.dataset.y = y - 1;
+                    rowPontV.appendChild(tdPontV);
 
-                      //creation des espaces vide entre les cases
-                      const coin = document.createElement("td");
-                      coin.classList.add("coin");
-                      rowPontV.appendChild(coin);
-                }
-
-                if (x === limit) {
-                    table.appendChild(row);
-                    if (y !== limit) table.appendChild(rowPontV);
+                    const coin = document.createElement("td");
+                    coin.classList.add("coin");
+                    rowPontV.appendChild(coin);
                 }
             });
-            plateau.appendChild(table);
+
+            table.appendChild(row);
+            if (y !== 1) table.appendChild(rowPontV);
+        });
+
+        plateau.appendChild(table);
     });
 }
 
@@ -239,7 +265,6 @@ function placerLutin(x, y, couleur) {
 function placerPonth(x1, y1, x2, y2) {
     const cas = document.querySelector(`.pont-h[data-x="${x1}"][data-y="${y1}"]`);
 
-
     if (!cas) {
         console.error("Element introuvable !");
         return;
@@ -247,6 +272,7 @@ function placerPonth(x1, y1, x2, y2) {
 
     const pont_h = document.createElement('div');
     pont_h.classList.add('pont-hadded');
+    pont_h.dataset.pont = pontId(x1, y1, x2, y2); // identifiant unique
     cas.appendChild(pont_h);
 }
 
@@ -260,6 +286,7 @@ function placerPontV(x1, y1, x2, y2) {
 
     const pont_v = document.createElement('div');
     pont_v.classList.add('pont-vadded');
+    pont_v.dataset.pont = pontId(x1, y1, x2, y2); // identifiant unique
     cas.appendChild(pont_v);
 }
 
@@ -367,8 +394,119 @@ function placer_les_ponts() {
 }
 
 
-//fonction concernants les deplacements des luttins -------------------------------------------------------------------------------------------------------------------------------
+//fonction concernants les deplacements des ponts -------------------------------------------------------------------------------------------------------------------------------
 
+// Supprime un pont du DOM via son identifiant normalisé
+function supprimerPontDOM(x1, y1, x2, y2) {
+    const id = pontId(x1, y1, x2, y2);
+    const pont = document.querySelector(`[data-pont="${id}"]`);
+    if (pont) pont.remove();
+    else console.warn("Pont DOM introuvable pour id:", id);
+}
+
+// Met à jour le DOM après une rotation de pont
+function tournerPontDOM(x1, y1, x2, y2, ax, ay, sens) {
+    supprimerPontDOM(x1, y1, x2, y2);
+
+    if (y1 === y2) {
+        // était H → devient V
+        let vyMin = sens === "up" ? ay : ay - 1;
+        let vyMax = sens === "up" ? ay + 1 : ay;
+        const casV = document.querySelector(`.pont-v[data-x="${ax}"][data-y="${vyMin}"]`);
+        if (casV) {
+            const div = document.createElement('div');
+            div.classList.add('pont-vadded');
+            div.dataset.pont = pontId(ax, vyMin, ax, vyMax);
+            casV.appendChild(div);
+        } else {
+            console.warn(`pont-v cible introuvable: (${ax},${vyMin})`);
+        }
+    } else {
+        // était V → devient H
+        let hxMin = sens === "right" ? ax : ax - 1;
+        let hxMax = sens === "right" ? ax + 1 : ax;
+        const casH = document.querySelector(`.pont-h[data-x="${hxMin}"][data-y="${ay}"]`);
+        if (casH) {
+            const div = document.createElement('div');
+            div.classList.add('pont-hadded');
+            div.dataset.pont = pontId(hxMin, ay, hxMax, ay);
+            casH.appendChild(div);
+        } else {
+            console.warn(`pont-h cible introuvable: (${hxMin},${ay})`);
+        }
+    }
+}
+
+// Affiche le panneau d'actions pour chaque pont traversé
+function proposer_actions_ponts(ponts) {
+    const panel = document.getElementById("arrow-panel");
+    panel.innerHTML = "<p style='color:white;margin:4px 0;font-size:14px'>Ponts traversés :</p>";
+
+    ponts.forEach(pont => {
+        const x1 = pont[0], y1 = pont[1], x2 = pont[2], y2 = pont[3];
+        const estHorizontal = (y1 === y2);
+
+        const div = document.createElement("div");
+        div.style.color = "white";
+        div.style.marginBottom = "10px";
+        div.style.fontSize = "12px";
+        div.style.borderBottom = "1px solid rgba(255,255,255,0.2)";
+        div.style.paddingBottom = "8px";
+        div.innerHTML = `<strong>(${x1},${y1})→(${x2},${y2})</strong><br>`;
+
+        // Bouton retirer
+        const btnRetirer = document.createElement("button");
+        btnRetirer.textContent = "Retirer";
+        btnRetirer.style.margin = "2px";
+        btnRetirer.style.fontSize = "11px";
+        btnRetirer.addEventListener("click", () => {
+            plSession.session.query(`retirer_pont(${x1}, ${y1}, ${x2}, ${y2}).`);
+            plSession.session.answer(_ => {});
+            supprimerPontDOM(x1, y1, x2, y2);
+            div.remove(); // supprime seulement ce pont du panneau
+        });
+        div.appendChild(btnRetirer);
+
+        // 4 boutons de rotation selon orientation du pont
+        const rotations = estHorizontal ? [
+            { ax: x1, ay: y1, sens: "up",   label: `↑ axe (${x1},${y1})` },
+            { ax: x1, ay: y1, sens: "down",  label: `↓ axe (${x1},${y1})` },
+            { ax: x2, ay: y2, sens: "up",    label: `↑ axe (${x2},${y2})` },
+            { ax: x2, ay: y2, sens: "down",  label: `↓ axe (${x2},${y2})` },
+        ] : [
+            { ax: x1, ay: y1, sens: "right", label: `→ axe (${x1},${y1})` },
+            { ax: x1, ay: y1, sens: "left",  label: `← axe (${x1},${y1})` },
+            { ax: x2, ay: y2, sens: "right", label: `→ axe (${x2},${y2})` },
+            { ax: x2, ay: y2, sens: "left",  label: `← axe (${x2},${y2})` },
+        ];
+
+        rotations.forEach(({ ax, ay, sens, label }) => {
+            const lax = ax, lay = ay, lsens = sens;
+            const btn = document.createElement("button");
+            btn.textContent = label;
+            btn.style.margin = "2px";
+            btn.style.fontSize = "11px";
+            btn.addEventListener("click", () => {
+                const query = `tourner_pont(${x1}, ${y1}, ${x2}, ${y2}, ${lax}, ${lay}, ${lsens}).`;
+                plSession.session.query(query);
+                plSession.session.answer(rep => {
+                    if (rep && rep !== false) {
+                        tournerPontDOM(x1, y1, x2, y2, lax, lay, lsens);
+                        div.remove();
+                    } else {
+                        btn.style.opacity = "0.3";
+                        btn.disabled = true;
+                    }
+                });
+            });
+            div.appendChild(btn);
+        });
+
+        panel.appendChild(div);
+    });
+}
+
+//fonction concernants les deplacements des lutins -------------------------------------------------------------------------------------------------------------------------------
 
 function showArrows() {
 
@@ -403,40 +541,19 @@ function activatearrows(lutin){
                 arrow.addEventListener("click",function(){
                       console.log("i was called");
                       const direction = this.classList[1];
-
-                      if (direction.toLowerCase() ==="up"){
-                            plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, up, Xf, Yf).`);
-                            plSession.session.answer(rep => {
-                                if (rep && rep !== false) {
-                                    refresh_joueurs();
-                                }
-                            });
-                      }
-                      if (direction.toLowerCase() ==="down"){
-                              plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, down, Xf, Yf).`);
-                              plSession.session.answer(rep => {
-                                  if (rep && rep !== false) {
-                                    refresh_joueurs();
-                                  }
-                              });
-                      }
-                      if (direction.toLowerCase() ==="right"){
-                                 plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, right, Xf, Yf).`);
-                                 plSession.session.answer(rep => {
-                                   if (rep && rep !== false) {
-                                      refresh_joueurs();
-                                   }
-                                 });
-                      }
-                      if  (direction.toLowerCase() ==="left"){
-                                plSession.session.query(`deplacement(${numJoueur}, ${xs}, ${ys}, left, Xf, Yf).`);
-                                plSession.session.answer(rep => {
-                                   if (rep && rep !== false) {
-                                       refresh_joueurs();
-                                       console.log("i did succed i left ");
-                                   }
-                                });
-                      }
+                      const query = `deplacement(${numJoueur}, ${xs}, ${ys}, ${direction.toLowerCase()}, Xf, Yf, Ponts).`;
+                      plSession.session.query(query);
+                      plSession.session.answer(rep => {
+                          if (rep && rep !== false) {
+                              const pontsRaw = rep.lookup("Ponts");
+                              const pontsArr = fromList(pontsRaw);
+                              refresh_joueurs();
+                              if (pontsArr && pontsArr.length > 0) {
+                                  const ponts = pontsArr.map(fromPontTerm);
+                                  proposer_actions_ponts(ponts);
+                              }
+                          }
+                      });
                 });
          });
 }

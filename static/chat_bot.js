@@ -318,6 +318,8 @@ string_as_list(W,W).
 :- dynamic(postionLutinJoueur2/1).
 :- dynamic(postionLutinJoueur3/1).
 :- dynamic(postionLutinJoueur4/1).
+:- dynamic(pont_h/2).
+:- dynamic(pont_v/2).
 
 casesPlateau(L):- L=[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
         [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
@@ -395,24 +397,24 @@ pont_entre(X, Y, left, X2, Y) :-
     pont_h([X2,Y],[X,Y]).
 
 pont_entre(X, Y, up, X, Y2) :-
-    Y2 is Y - 1,
-    pont_v([X,Y2],[X,Y]).
-
-pont_entre(X, Y, down, X, Y2) :-
     Y2 is Y + 1,
     pont_v([X,Y],[X,Y2]).
 
+pont_entre(X, Y, down, X, Y2) :-
+    Y2 is Y - 1,
+    pont_v([X,Y2],[X,Y]).
 
 
-%  calcule la case finale apres glissement
 
-calculer_destinationcase(X, Y, Dir, Xf, Yf) :-
+%  calcule la case finale apres glissement — retourne aussi les ponts traversés
+
+calculer_destinationcase(X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
     pont_entre(X, Y, Dir, X2, Y2),
     dans_plateau(X2, Y2),
     \+ occupe(X2, Y2), !,
-    calculer_destinationcase(X2, Y2, Dir, Xf, Yf).
+    calculer_destinationcase(X2, Y2, Dir, Xf, Yf, Reste).
 
-calculer_destinationcase(X, Y, _, X, Y).
+calculer_destinationcase(X, Y, _, X, Y, []).
 
 
 
@@ -445,12 +447,60 @@ deplacer_lutin(4, Xs, Ys, Xf, Yf) :-
     assertz(postionLutinJoueur4(NouvelleL)).
 
 
-% Calcule la case finale et met à jour la base de connaissance
+% Calcule la case finale, retourne les ponts traversés et met à jour la base de connaissance
 
-deplacement(Joueur, Xs, Ys, Dir, Xf, Yf) :-
-    calculer_destinationcase(Xs, Ys, Dir, Xf, Yf),
+deplacement(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts) :-
+    calculer_destinationcase(Xs, Ys, Dir, Xf, Yf, Ponts),
     deplacer_lutin(Joueur, Xs, Ys, Xf, Yf).
 
 
-`
+/* --------------------------------------------------------------------- */
+/*                     GESTION DES PONTS                                 */
+/* --------------------------------------------------------------------- */
 
+% Retirer un pont — normalisation automatique des coordonnées
+retirer_pont(X1, Y1, X2, Y2) :-
+    Y1 =:= Y2,
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    retract(pont_h([Xmin,Y1],[Xmax,Y1])).
+
+retirer_pont(X1, Y1, X2, Y2) :-
+    X1 =:= X2,
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    retract(pont_v([X1,Ymin],[X1,Ymax])).
+
+% Tourner un pont H (Y1=Y2) sur l'axe (Ax,Ay)
+% sens = up (nouveau pont V vers le haut) ou down (vers le bas)
+
+tourner_pont(X1, Y1, X2, Y1, Ax, Ay, up) :-
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    retract(pont_h([Xmin,Y1],[Xmax,Y1])),
+    Ay2 is Ay + 1,
+    Ay2 =< 6,
+    assertz(pont_v([Ax,Ay],[Ax,Ay2])).
+
+tourner_pont(X1, Y1, X2, Y1, Ax, Ay, down) :-
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    retract(pont_h([Xmin,Y1],[Xmax,Y1])),
+    Ay2 is Ay - 1,
+    Ay2 >= 1,
+    assertz(pont_v([Ax,Ay2],[Ax,Ay])).
+
+% Tourner un pont V (X1=X2) sur l'axe (Ax,Ay)
+% sens = right (nouveau pont H vers la droite) ou left (vers la gauche)
+
+tourner_pont(X1, Y1, X1, Y2, Ax, Ay, right) :-
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    retract(pont_v([X1,Ymin],[X1,Ymax])),
+    Ax2 is Ax + 1,
+    Ax2 =< 6,
+    assertz(pont_h([Ax,Ay],[Ax2,Ay])).
+
+tourner_pont(X1, Y1, X1, Y2, Ax, Ay, left) :-
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    retract(pont_v([X1,Ymin],[X1,Ymax])),
+    Ax2 is Ax - 1,
+    Ax2 >= 1,
+    assertz(pont_h([Ax2,Ay],[Ax,Ay])).
+
+`
