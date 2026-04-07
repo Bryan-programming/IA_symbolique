@@ -1,9 +1,6 @@
-
 /* From https://www.youtube.com/watch?v=-k-PgvbktX4
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
-
-
 
 * {
   padding: 0;
@@ -15,11 +12,12 @@ html {
   font-family: "Montserrat";
   font-size: 20px;
   height: 100%;
-
 }
 
-body{
+body {
     height: 100%;
+    display: flex;
+    flex-direction: row;
 }
 
 section {
@@ -33,10 +31,12 @@ section {
   height: 100%;
 }
 
-.left-part{
+.left-part {
     width: 66%;
     height: 100%;
     display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 section h1 {
@@ -54,218 +54,121 @@ section p {
   margin-bottom: 40px;
 }
 
-.container {
-  width: 90%;
-  max-width: 500px;
-  margin: 0 auto;
-  justify-content: center;
-}
-
-.texts p {
-  color: black;
-  text-align: left;
-  width: 100%;
-  background-color: white;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-.texts p.replay {
-  text-align: right;
-}
-
-body{
-  display: flex;
-  flex-direction: row;
-}
-
-.chat-section{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  width: 40%;
-  background-color: rgb(36, 36, 36);
-  height: 100%;
-}
-
-.chat-form{
-    width: 100%;
-}
-
-#chat-input{
-    width: 65%;
-    height: 35px;
-    border-radius: 12px;
-    margin-left: 5px;
-}
-
-#chat-input:focus{
-    outline: none;
-    box-shadow: 0 0 5px #719ECE;
-    border: 1px solid #719ECE;
-}
-
-#chat-input:hover{
-    border: 1px solid #555555;
-}
-
-#chat-submit{
-    width: 18%;
-    height: 30px;
-    border-radius: 8px;
-}
-
-#chat-submit:hover{
-    background-color: #292828;
-    color: rgb(248, 248, 248);
-    cursor: pointer;
-}
-
-#chat-voice{
-    width: 50px;
-    height: 30px;
-    border-radius: 5px;
-}
-
-#chat-voice:hover{
-    cursor: pointer;
-    scale: 0.8;
-}
-
-#map { 
-    width: 70%;
-    height: 70%;
-    
-}
-
-.chat-text{
-    color: white;
-    text-align: center;
-    margin-bottom: 0px;
-}
-
-.output{
-    color: white !important;
-    text-align:justify;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    max-height: 400px; /* hauteur maximale souhaitée */ 
-    overflow-y: auto; /* affiche une barre de défilement verticale si le contenu dépasse */
-}
-
-.message{
-    background-color: white;
-    padding: 10px;
-    border-radius: 10px;
-    margin: 10px;
-    display: flex;
-    flex: 1 0 auto;
-    color: black;
-    width: auto;
-}
-
-.agent{
-    align-self: flex-start;
-}
-
-.user{
-    align-self: flex-end;
-}
-
-
-
-/*style du plateau de jeu */
-
-#plateau table {
-      border-collapse: 0px;
-      margin:center;
-      height: 90%;
-
-}
-
-
+/* Layout principal : panneau gauche + plateau */
 .board_arrows {
     display: flex;
-    align-items: center;
+    flex-direction: row;
+    align-items: flex-start;
     justify-content: center;
-    gap: 5px;
     width: 100%;
-
-    margin-left:50px;
+    margin-top: 20px;
+    gap: 20px;
 }
+
+/* Panneau flèches / ponts : colonne fixe à gauche */
+#arrow-panel {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    min-height: 100px;
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+/* Plateau de jeu */
 .box {
-    height: 70%;
     background-color: white;
     border: 2px solid black;
     padding: 30px;
     border-radius: 20px;
     width: 500px;
+    min-width: 500px;
     display: flex;
     align-items: center;
+    justify-content: center;
     min-height: 500px;
     max-height: 550px;
-    position: relative;
-    top: 10%;
 }
 
+/* Flèches de direction */
+.arrow {
+    width: 100%;
+    height: 40px;
+    background: grey;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.arrow:hover {
+    background: red;
+}
+
+/* Cases du plateau */
+#plateau table {
+    border-collapse: 0px;
+    margin: center;
+    height: 90%;
+}
 
 .case {
-      position: relative;
-      width: 30px;
-      height: 30px;
-      background-color: lightgreen;
-      border: 2px solid #333;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    position: relative;
+    width: 30px;
+    height: 30px;
+    background-color: lightgreen;
+    border: 2px solid #333;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .lutin {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 2px solid #333;
-      
-}
-
-/* Pont horizontal — ligne fine centrée*/
-.pont-h {
-    width: 50px;
-    height: 12px;
-    background: white;
-
-}
-
-/* Pont vertical — ligne fine centrée */
-.pont-v {
-    width: 16px;
-    height: 40px;
-    background: white;
-}
-
-/*les cases transparent  pour representer le vide */
-.coin {
-      width: 20px;
-      height: 20px;
-      background-color: transparent;
-}
-
-.lutin:hover {
     width: 30px;
     height: 30px;
     border-radius: 50%;
+    border: 2px solid #333;
+}
+
+.lutin:hover {
     scale: 1.4;
+    cursor: pointer;
 }
 
 .vert  { background-color: #2ecc71; }
 .rouge { background-color: #e74c3c; }
 .bleu  { background-color: #3498db; }
 .jaune { background-color: #f1c40f; }
+
+/* Ponts */
+.pont-h {
+    width: 50px;
+    height: 12px;
+    background: white;
+}
+
+.pont-v {
+    width: 16px;
+    height: 40px;
+    background: white;
+}
+
+.coin {
+    width: 20px;
+    height: 20px;
+    background-color: transparent;
+}
 
 .pont-hadded {
     width: 100%;
@@ -289,30 +192,90 @@ body{
     );
 }
 
+/* Chat */
+.chat-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 34%;
+    background-color: rgb(36, 36, 36);
+    height: 100%;
+    min-height: 100vh;
+}
 
-/*section pour les directions (arrows up/down/left/right)   */
-#arrow-panel {
+.chat-form {
+    width: 100%;
+}
+
+#chat-input {
+    width: 65%;
+    height: 35px;
+    border-radius: 12px;
+    margin-left: 5px;
+}
+
+#chat-input:focus {
+    outline: none;
+    box-shadow: 0 0 5px #719ECE;
+    border: 1px solid #719ECE;
+}
+
+#chat-input:hover {
+    border: 1px solid #555555;
+}
+
+#chat-submit {
+    width: 18%;
+    height: 30px;
+    border-radius: 8px;
+}
+
+#chat-submit:hover {
+    background-color: #292828;
+    color: rgb(248, 248, 248);
+    cursor: pointer;
+}
+
+#chat-voice {
+    width: 50px;
+    height: 30px;
+    border-radius: 5px;
+}
+
+#chat-voice:hover {
+    cursor: pointer;
+    scale: 0.8;
+}
+
+.chat-text {
+    color: white;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.output {
+    color: white !important;
+    text-align: justify;
+    margin-top: 20px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-left: -5px;
+    max-height: 400px;
+    overflow-y: auto;
+    width: 90%;
 }
 
-.arrow {
-    width: 50px;
-    height: 50px;
-    background: grey;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
+.message {
+    background-color: white;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 10px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    margin:5px;
+    flex: 1 0 auto;
+    color: black;
+    width: auto;
 }
 
-.arrow:hover{
-    background: red;
-
-}
+.agent { align-self: flex-start; }
+.user  { align-self: flex-end; }
