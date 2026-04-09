@@ -227,6 +227,66 @@ get_IA_choice(Etat, Profondeur, Joueur, Alpha, Beta, BestChoices):-
 
 % ---------- fonctions à implémenter pour l'ia -------------
 
+%% capturer_etat(-Etat)
+%  Lit la base de faits et construit le terme etat/6.
+capturer_etat(etat(L1, L2, L3, L4, PH, PV)) :-
+    postionLutinJoueur1(L1),
+    postionLutinJoueur2(L2),
+    postionLutinJoueur3(L3),
+    postionLutinJoueur4(L4),
+    tous_ponts_h(PH),
+    tous_ponts_v(PV).
+
+lutins_joueur(1, etat(L,_,_,_,_,_), L).
+lutins_joueur(2, etat(_,L,_,_,_,_), L).
+lutins_joueur(3, etat(_,_,L,_,_,_), L).
+lutins_joueur(4, etat(_,_,_,L,_,_), L).
+
+%% remplacer_lutins(+Joueur, +Etat, +NouveauxLutins, -NouvelEtat)
+remplacer_lutins(1, etat(_,L2,L3,L4,PH,PV), NL, etat(NL,L2,L3,L4,PH,PV)).
+remplacer_lutins(2, etat(L1,_,L3,L4,PH,PV), NL, etat(L1,NL,L3,L4,PH,PV)).
+remplacer_lutins(3, etat(L1,L2,_,L4,PH,PV), NL, etat(L1,L2,NL,L4,PH,PV)).
+remplacer_lutins(4, etat(L1,L2,L3,_,PH,PV), NL, etat(L1,L2,L3,NL,PH,PV)).
+
+
+%% pont_adjacent(+Etat, +X, +Y, +Dir, -X2, -Y2)
+pont_adjacent(etat(_,_,_,_,PH,_), X, Y, right, X2, Y) :-
+    X2 is X+1, X2 =< 6,
+    Xmin is min(X,X2), Xmax is max(X,X2),
+    member([[Xmin,Y],[Xmax,Y]], PH).
+pont_adjacent(etat(_,_,_,_,PH,_), X, Y, left, X2, Y) :-
+    X2 is X-1, X2 >= 1,
+    Xmin is min(X,X2), Xmax is max(X,X2),
+    member([[Xmin,Y],[Xmax,Y]], PH).
+pont_adjacent(etat(_,_,_,_,_,PV), X, Y, up, X, Y2) :-
+    Y2 is Y+1, Y2 =< 6,
+    Ymin is min(Y,Y2), Ymax is max(Y,Y2),
+    member([[X,Ymin],[X,Ymax]], PV).
+pont_adjacent(etat(_,_,_,_,_,PV), X, Y, down, X, Y2) :-
+    Y2 is Y-1, Y2 >= 1,
+    Ymin is min(Y,Y2), Ymax is max(Y,Y2),
+    member([[X,Ymin],[X,Ymax]], PV).
+% vérifie si une position est occupée par un lutin dans un état donné%
+occupe_etat(etat(L1,L2,L3,L4,_,_), X, Y) :-
+    ( member([X,Y], L1)
+    ; member([X,Y], L2)
+    ; member([X,Y], L3)
+    ; member([X,Y], L4)
+    ), !.
+% retourne la liste des ponts adjacents à la position [X,Y] dans l'état donné%
+ponts_adjacents(Etat, [X,Y], Ponts) :-
+    findall(Dir,
+        pont_adjacent(Etat, X, Y, Dir, _, _),
+        Ponts).
+% vérifie si il y'a un pont adjacent à la position [X,Y] dans l'état donné%
+a_un_pont(Etat, [X,Y]) :-
+    ponts_adjacents(Etat, [X,Y], Ponts),
+    Ponts \= [].
+
+% compte le nombre de ponts adjacents à la position [X,Y] dans l'état donné%
+nb_ponts(Etat, [X,Y], N) :-
+    ponts_adjacents(Etat, [X,Y], Ponts),
+    length(Ponts, N).
 % pour gagner le jeu il faut faire en sorte de retirer les ponts autours des lutins ennemis
 % donc il faut créer une fonction pour compter le nombre de ponts autour de chaque lutins enemie 
 % et par example return le lutins avec le moins de lutins autour de lui. (utilisé dans l'heuristique 1)
