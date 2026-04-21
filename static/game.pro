@@ -217,7 +217,7 @@ on part du principe que si j'appele la fonction, c'est au tour de l'ia de jouer
 
 % spec : Etat contient l'état du jeu, Profondeur correspond au nombre de mouvement qu'on prédit, 
 % Joueur correspond au joueur que l'ia joue, BestChoices est le meilleur coup à effectuer pour l'ia
-get_IA_choice(Etat, Profondeur, Joueur, Alpha, Beta, BestChoices):-
+get_IA_choice(Etat, Profondeur, Joueur, Alpha, Beta, BestChoices).
     % étape 1 : créer une copie du jeu afin d'y appliquer une mouvement
 
     % étape 2 : génerer tout les état possible afin d'applique minMax
@@ -248,7 +248,6 @@ remplacer_lutins(2, etat(L1,_,L3,L4,PH,PV), NL, etat(L1,NL,L3,L4,PH,PV)).
 remplacer_lutins(3, etat(L1,L2,_,L4,PH,PV), NL, etat(L1,L2,NL,L4,PH,PV)).
 remplacer_lutins(4, etat(L1,L2,L3,_,PH,PV), NL, etat(L1,L2,L3,NL,PH,PV)).
 
-
 %% pont_adjacent(+Etat, +X, +Y, +Dir, -X2, -Y2)
 pont_adjacent(etat(_,_,_,_,PH,_), X, Y, right, X2, Y) :-
     X2 is X+1, X2 =< 6,
@@ -266,19 +265,22 @@ pont_adjacent(etat(_,_,_,_,_,PV), X, Y, down, X, Y2) :-
     Y2 is Y-1, Y2 >= 1,
     Ymin is min(Y,Y2), Ymax is max(Y,Y2),
     member([[X,Ymin],[X,Ymax]], PV).
-% vérifie si une position est occupée par un lutin dans un état donné%
+
+% vérifie si une position est occupée par un lutin dans un état donné
 occupe_etat(etat(L1,L2,L3,L4,_,_), X, Y) :-
     ( member([X,Y], L1)
     ; member([X,Y], L2)
     ; member([X,Y], L3)
     ; member([X,Y], L4)
     ), !.
-% retourne la liste des ponts adjacents à la position [X,Y] dans l'état donné%
+
+% retourne la liste des ponts adjacents à la position [X,Y] dans l'état donné
 ponts_adjacents(Etat, [X,Y], Ponts) :-
     findall(Dir,
         pont_adjacent(Etat, X, Y, Dir, _, _),
         Ponts).
-% vérifie si il y'a un pont adjacent à la position [X,Y] dans l'état donné%
+
+% vérifie si il y'a un pont adjacent à la position [X,Y] dans l'état donné
 a_un_pont(Etat, [X,Y]) :-
     ponts_adjacents(Etat, [X,Y], Ponts),
     Ponts \= [].
@@ -287,16 +289,46 @@ a_un_pont(Etat, [X,Y]) :-
 nb_ponts(Etat, [X,Y], N) :-
     ponts_adjacents(Etat, [X,Y], Ponts),
     length(Ponts, N).
+
 % pour gagner le jeu il faut faire en sorte de retirer les ponts autours des lutins ennemis
 % donc il faut créer une fonction pour compter le nombre de ponts autour de chaque lutins enemie 
 % et par example return le lutins avec le moins de lutins autour de lui. (utilisé dans l'heuristique 1)
 get_bridge(Lutins, Bridges). % à compléter
 
-% % fonction qui verifie si un joueur a gagné et que tout les autres sont éliminé (donc état terminal)
-game_over(etat(Plateau, Lutins)). 
+% fonction qui regarde si un joueur peut bouger au moins 1 de ses lutins.
+peut_bouger(Etat, Lutins):-
+    member(Pos, Lutins),
+    a_un_pont(Etat, Pos).
+    % doit encore gérer le cas ou il y a un lutins ennemie sur la case
+
+% return true si une joueur ne peux plus bouger
+joueur_bloque(Lutins, Etat):-
+    \+ peut_bouger(Etat, Lutins).
+
+% fonction qui verifie si un joueur a gagné et que tout les autres sont éliminé (donc état terminal)
+% question : 
+% que se passe t il si tout les joueurs sont éliminé en même temps ?
+% ma solution est d'implémenter game_over de la façons suivante :
+% on regarde si au moins 3 personnes sont éliminé, ce qui gère le cas de base (1 gagnant, 3 personnes éliminé)
+% ainsi que le cas oû tout les monde perd (4 personnes éliminé) 
+game_over(Etat):-
+    Etat = etat(L1, L2, L3, L4, PH, PV),
+    (joueur_bloque(L1, Etat) -> B1 = [1]; B1 = []),
+    (joueur_bloque(L2, Etat) -> B2 = [2]; B2 = []),
+    (joueur_bloque(L3, Etat) -> B3 = [3]; B3 = []),
+    (joueur_bloque(L4, Etat) -> B4 = [4]; B4 = []),
+    append([B1, B2, B3, B4], Blocked),
+    length(Blocked, N),
+    N >= 3.
+
+% pour tester la fonction : 
+% game_over(etat([[1,1]], [[2,1]], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[2,1],[3,1]], [[3,1],[4,1]]], [])). : échoue
+% game_over(etat([[1,1]], [], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[3,1],[4,1]]], [])). : échoue
+% game_over(etat([[1,1]], [], [], [], [[[1,1], [2,1]]], [])). : réussi
+% game_over(etat([[1,1]], [[2,2]], [[3,3]], [[4,4]], [], [])). : réussi
 
 % fonction qui calcule la valeur associé à un état (non-terminal), sera utilisé dans minMax
-% il faut définir plusieur critères qui accoderons des points en fonctions de la situation
+% il faut définir plusieur critères qui accorderons des points en fonctions de la situation
 % par example on regardes combien de lutins les adversaire peuvent bouger et plus ce chiffre est faible, 
 % plus la valeur de la situation est élevé. on peut aussi prendre en compte le nombre de lutins qu'on peut bouger
 get_value(Plateau, Joueur, Valeur). 
