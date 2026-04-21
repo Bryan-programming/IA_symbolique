@@ -293,7 +293,8 @@ nb_ponts(Etat, [X,Y], N) :-
 % pour gagner le jeu il faut faire en sorte de retirer les ponts autours des lutins ennemis
 % donc il faut créer une fonction pour compter le nombre de ponts autour de chaque lutins enemie 
 % et par example return le lutins avec le moins de lutins autour de lui. (utilisé dans l'heuristique 1)
-get_bridge(Lutins, Bridges). % à compléter
+get_bridge(Lutins, Etat, Bridges) :-
+    maplist(nb_ponts(Etat), Lutins, Bridges).
 
 % fonction qui regarde si un joueur peut bouger au moins 1 de ses lutins.
 peut_bouger(Etat, Lutins):-
