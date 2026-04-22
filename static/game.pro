@@ -306,6 +306,31 @@ peut_bouger(Etat, Lutins):-
 joueur_bloque(Lutins, Etat):-
     \+ peut_bouger(Etat, Lutins).
 
+% connectivite(+Etat, +[X,Y], -Taille)
+% calcule le nombre de noeuds atteignables depuis [X,Y]
+% en suivant les ponts existants dans Etat
+% exemple : si [X,Y] est dans une zone de 5 noeuds reliés, Taille = 5
+connectivite(Etat, [X,Y], Taille) :-
+    % collecte tous les noeuds atteignables depuis [X,Y]
+    % [[X,Y]] dans Visited pour éviter de revisiter le noeud de départ
+    findall(P, atteignable(Etat, [X,Y], P, [[X,Y]]), Noeuds),
+    % supprime les doublons — un noeud peut être trouvé par plusieurs chemins
+    sort(Noeuds, NoeudUniques),
+    % la taille de la composante = nombre de noeuds uniques atteignables
+    length(NoeudUniques, Taille).
+
+% atteignable(+Etat, +Pos, -Res, +Visited)
+% cas de base : Pos est atteignable depuis lui-même
+atteignable(_, Pos, Pos, _).
+% cas récursif : Res est atteignable depuis Pos
+% si on peut aller vers un noeud voisin non visité, et que Res est atteignable depuis ce noeud
+atteignable(Etat, [X,Y], Res, Visited) :-
+    % cherche un noeud voisin de [X,Y] via un pont existant
+    pont_adjacent(Etat, X, Y, _, X2, Y2),
+    % vérifie que ce noeud n'a pas déjà été visité (évite les cycles)
+    \+ member([X2,Y2], Visited),
+    % continue la recherche depuis le noeud voisin en l'ajoutant aux visités
+    atteignable(Etat, [X2,Y2], Res, [[X2,Y2]|Visited]).
 % fonction qui verifie si un joueur a gagné et que tout les autres sont éliminé (donc état terminal)
 % question : 
 % que se passe t il si tout les joueurs sont éliminé en même temps ?
