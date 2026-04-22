@@ -285,7 +285,7 @@ a_un_pont(Etat, [X,Y]) :-
     ponts_adjacents(Etat, [X,Y], Ponts),
     Ponts \= [].
 
-% compte le nombre de ponts adjacents à la position [X,Y] dans l'état donné%
+% compte le nombre de ponts adjacents à la position [X,Y] dans l'état donné
 nb_ponts(Etat, [X,Y], N) :-
     ponts_adjacents(Etat, [X,Y], Ponts),
     length(Ponts, N).
@@ -298,9 +298,10 @@ get_bridge(Lutins, Etat, Bridges) :-
 
 % fonction qui regarde si un joueur peut bouger au moins 1 de ses lutins.
 peut_bouger(Etat, Lutins):-
-    member(Pos, Lutins),
-    a_un_pont(Etat, Pos).
-    % doit encore gérer le cas ou il y a un lutins ennemie sur la case
+    member([X, Y], Lutins), 
+    pont_adjacent(Etat, X, Y, _, X2, Y2),
+    dans_plateau(X2, Y2),
+    \+ occupe_etat(Etat, X2, Y2).
 
 % return true si une joueur ne peux plus bouger
 joueur_bloque(Lutins, Etat):-
@@ -348,10 +349,12 @@ game_over(Etat):-
     N >= 3.
 
 % pour tester la fonction : 
-% game_over(etat([[1,1]], [[2,1]], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[2,1],[3,1]], [[3,1],[4,1]]], [])). : échoue
-% game_over(etat([[1,1]], [], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[3,1],[4,1]]], [])). : échoue
-% game_over(etat([[1,1]], [], [], [], [[[1,1], [2,1]]], [])). : réussi
-% game_over(etat([[1,1]], [[2,2]], [[3,3]], [[4,4]], [], [])). : réussi
+% game_over(etat([[1,1]], [[2,1]], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[2,1],[3,1]], [[3,1],[4,1]]], [])). : true
+% game_over(etat([[1,1]], [], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[3,1],[4,1]]], [])). : true
+% game_over(etat([[1,1]], [], [], [], [[[1,1], [2,1]]], [])). : true
+% game_over(etat([[1,1]], [[2,2]], [[3,3]], [[4,4]], [], [])). : true
+% game_over(etat([[1,1]], [[2,1]], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[2,1],[3,1]], [[3,1],[4,1]]], [])). : true
+% game_over(etat([[1,1]], [[6,6]], [], [], [[[1,1],[2,1]], [[5,6],[6,6]]], [])). : false
 
 % fonction qui calcule la valeur associé à un état (non-terminal), sera utilisé dans minMax
 % il faut définir plusieur critères qui accorderons des points en fonctions de la situation
