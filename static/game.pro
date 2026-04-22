@@ -332,6 +332,16 @@ atteignable(Etat, [X,Y], Res, Visited) :-
     \+ member([X2,Y2], Visited),
     % continue la recherche depuis le noeud voisin en l'ajoutant aux visités
     atteignable(Etat, [X2,Y2], Res, [[X2,Y2]|Visited]).
+
+% score_lutin(+Etat, +Pos, -Score)
+% calcule le score d'un lutin selon son degré et sa connectivité
+% degré pèse plus que connectivité : danger immédiat > liberté future
+score_lutin(Etat, Pos, Score) :-
+    % nombre de ponts directement adjacents
+    nb_ponts(Etat, Pos, Degre),
+    % nombre de noeuds atteignables depuis ce lutin
+    connectivite(Etat, Pos, Taille),
+    Score is 5 * Degre + 3 * Taille.
 % fonction qui verifie si un joueur a gagné et que tout les autres sont éliminé (donc état terminal)
 % question : 
 % que se passe t il si tout les joueurs sont éliminé en même temps ?
