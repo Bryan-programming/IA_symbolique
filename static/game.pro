@@ -342,6 +342,26 @@ score_lutin(Etat, Pos, Score) :-
     % nombre de noeuds atteignables depuis ce lutin
     connectivite(Etat, Pos, Taille),
     Score is 5 * Degre + 3 * Taille.
+
+score_joueur(Etat, Joueur, Score) :-
+    lutins_joueur(Joueur, Etat, Lutins),
+    maplist(score_lutin(Etat), Lutins, Scores),
+    sumlist(Scores, Score).
+
+% score_ennemis(+Etat, +Joueur, -ScoreTotal)
+% somme les score_joueur de tous les ennemis
+score_ennemis(Etat, Joueur, ScoreTotal) :-
+    joueurs_ennemis(Joueur, Ennemis),
+    maplist(score_joueur(Etat), Ennemis, Scores),
+    sumlist(Scores, ScoreTotal).
+
+% nb_ponts_joueur(+Etat, +Joueur, -Total)
+% somme le nombre de ponts adjacents à tous les lutins d'un joueur
+nb_ponts_joueur(Etat, Joueur, Total) :-
+    lutins_joueur(Joueur, Etat, Lutins),
+    maplist(nb_ponts(Etat), Lutins, Ns),
+    sumlist(Ns, Total).
+
 % fonction qui verifie si un joueur a gagné et que tout les autres sont éliminé (donc état terminal)
 % question : 
 % que se passe t il si tout les joueurs sont éliminé en même temps ?
