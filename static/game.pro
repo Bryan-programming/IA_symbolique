@@ -355,6 +355,10 @@ score_ennemis(Etat, Joueur, ScoreTotal) :-
     maplist(score_joueur(Etat), Ennemis, Scores),
     sumlist(Scores, ScoreTotal).
 
+% retourne la liste des joueurs ennemies
+joueurs_ennemis(Joueur, Ennemis):-
+    delete([1, 2, 3, 4], Joueur, Ennemis).
+
 % nb_ponts_joueur(+Etat, +Joueur, -Total)
 % somme le nombre de ponts adjacents à tous les lutins d'un joueur
 nb_ponts_joueur(Etat, Joueur, Total) :-
@@ -378,19 +382,27 @@ game_over(Etat):-
     length(Blocked, N),
     N >= 3.
 
-% pour tester la fonction : 
-% game_over(etat([[1,1]], [[2,1]], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[2,1],[3,1]], [[3,1],[4,1]]], [])). : true
-% game_over(etat([[1,1]], [], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[3,1],[4,1]]], [])). : true
-% game_over(etat([[1,1]], [], [], [], [[[1,1], [2,1]]], [])). : true
-% game_over(etat([[1,1]], [[2,2]], [[3,3]], [[4,4]], [], [])). : true
-% game_over(etat([[1,1]], [[2,1]], [[3,1]], [[4,1]], [[[1,1],[2,1]], [[2,1],[3,1]], [[3,1],[4,1]]], [])). : true
-% game_over(etat([[1,1]], [[6,6]], [], [], [[[1,1],[2,1]], [[5,6],[6,6]]], [])). : false
-
 % fonction qui calcule la valeur associé à un état (non-terminal), sera utilisé dans minMax
 % il faut définir plusieur critères qui accorderons des points en fonctions de la situation
 % par example on regardes combien de lutins les adversaire peuvent bouger et plus ce chiffre est faible, 
 % plus la valeur de la situation est élevé. on peut aussi prendre en compte le nombre de lutins qu'on peut bouger
-get_value(Plateau, Joueur, Valeur). 
+get_value(Etat, Joueur, Valeur):-
+    lutins_joueur(Joueur, Etat, Lutins),
+    joueur_bloque(Lutins, Etat),
+    Valeur = -inf. % si le joueur est bloqué, on a perdu
 
-% applique un mouvement et retourne le nouvelle état 
-appliquer_mouvement(Etat, Mouvement, Etat_final).
+get_value(Etat, Joueur, Valeur):-
+    lutins_joueur(Joueur, Etat, Lutins),
+    \+ joueur_bloque(Lutins, Etat),
+    game_over(Etat),
+    Valeur = +inf. % le joueur n'est pas bloqué et la partie est finie -> il a gagné
+
+get_value(Etat, Joueur, Valeur):-
+    lutins_joueur(Joueur, Etat, Lutins),
+    score_joueur(Etat, Joueur, Score_joueur),
+    score_ennemis(Etat, Joueur, Score_enemie_totale),
+    Valeur is Score_joueur - (Score_enemie_totale / 4). % soustraction entre le score du joueur et la moyenne des scores ennemies
+
+% fonction qui va return pour chaque lutins du joueur les actions possibles. (sera utile pour minMax)
+generer_mouvement(Etat, Joueur, Mouvement).
+% a implémenter
