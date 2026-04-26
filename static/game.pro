@@ -103,15 +103,6 @@ pont_entre(X, Y, down, X, Y2) :-
     Y2 is Y - 1,
     pont_v([X,Y2],[X,Y]).
 
-%  calcule la case finale apres glissement — retourne aussi les ponts traversés
-calculer_destinationcase(X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
-    pont_entre(X, Y, Dir, X2, Y2),
-    dans_plateau(X2, Y2),
-    \+ occupe(X2, Y2), !,
-    calculer_destinationcase(X2, Y2, Dir, Xf, Yf, Reste).
-
-calculer_destinationcase(X, Y, _, X, Y, []).
-
 % déplace un lutin du joueur 1
 deplacer_lutin(1, Xs, Ys, Xf, Yf) :-
     postionLutinJoueur1(L),
@@ -406,3 +397,31 @@ get_value(Etat, Joueur, Valeur):-
 % fonction qui va return pour chaque lutins du joueur les actions possibles. (sera utile pour minMax)
 generer_mouvement(Etat, Joueur, Mouvement).
 % a implémenter
+
+
+
+
+%  fonction de deplacement qui renvoie un nouveau etat a pârtir de la copie
+
+
+% calcule la case finale depuis (X,Y) dans la direction Dir en utilisant Etat
+%et renvoie aussi la liste des ponts parcouru pour que apres on puisse choisir le pond a supprimer ou modifier
+calculer_case_finale(Etat, X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
+    pont_adjacent(Etat, X, Y, Dir, X2, Y2),
+    dans_plateau(X2, Y2),
+    \+ occupe_etat(Etat, X2, Y2), !,
+    calculer_case_finale(Etat, X2, Y2, Dir, Xf, Yf, Reste).
+
+calculer_case_finale(_, X, Y, _, X, Y, []).
+
+% calcule le nouvelle etat apres application du mouvement
+nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat) :-
+    lutins_joueur(Joueur, Etat, L),
+    select([Xs,Ys], L, LTemp), !,
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    remplacer_lutins(Joueur, Etat, NouvelleL, NouvelEtat).
+
+% version pure de deplacement reservee a l'IA retourne NouvelEtat cets cette focntion qui doit etre appele dans le minmax pour deplacer le lutin
+deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, NouvelEtat) :-
+    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
+    nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat).
