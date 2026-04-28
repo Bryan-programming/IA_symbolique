@@ -140,6 +140,30 @@ deplacement(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts) :-
     calculer_destinationcase(Xs, Ys, Dir, Xf, Yf, Ponts),
     deplacer_lutin(Joueur, Xs, Ys, Xf, Yf).
 
+%  fonction de deplacement qui renvoie un nouveau etat a pârtir de la copie
+
+% calcule la case finale depuis (X,Y) dans la direction Dir en utilisant Etat
+% et renvoie aussi la liste des ponts parcouru pour que apres on puisse choisir le pond a supprimer ou modifier
+calculer_case_finale(Etat, X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
+    pont_adjacent(Etat, X, Y, Dir, X2, Y2),
+    dans_plateau(X2, Y2),
+    \+ occupe_etat(Etat, X2, Y2), !,
+    calculer_case_finale(Etat, X2, Y2, Dir, Xf, Yf, Reste).
+
+calculer_case_finale(_, X, Y, _, X, Y, []).
+
+% calcule le nouvelle etat apres application du mouvement
+nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat) :-
+    lutins_joueur(Joueur, Etat, L),
+    select([Xs,Ys], L, LTemp), !,
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    remplacer_lutins(Joueur, Etat, NouvelleL, NouvelEtat).
+
+% version pure de deplacement reservee a l'IA retourne NouvelEtat cets cette focntion qui doit etre appele dans le minmax pour deplacer le lutin
+deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, NouvelEtat) :-
+    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
+    nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat).
+
 
 /* --------------------------------------------------------------------- */
 /*                     GESTION DES PONTS                                 */
@@ -151,10 +175,22 @@ retirer_pont(X1, Y1, X2, Y2) :-
     Xmin is min(X1,X2), Xmax is max(X1,X2),
     retract(pont_h([Xmin,Y1],[Xmax,Y1])).
 
+% version pur pour l'utiliser dans MinMax
+retirer_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y2, etat(L1, L2, L3, L4, PH_f, PV)) :-
+    Y1 =:= Y2,
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    delete(PH, [[Xmin,Y1],[Xmax,Y1]], PH_f).
+
 retirer_pont(X1, Y1, X2, Y2) :-
     X1 =:= X2,
     Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
     retract(pont_v([X1,Ymin],[X1,Ymax])).
+
+% version pur pour l'utiliser dans MinMax
+retirer_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y2, etat(L1, L2, L3, L4, PH, PV_f)) :-
+    X1 =:= X2,
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f).
 
 % Tourner un pont H (Y1=Y2) sur l'axe (Ax,Ay)
 % sens = up (nouveau pont V vers le haut) ou down (vers le bas)
@@ -166,12 +202,28 @@ tourner_pont(X1, Y1, X2, Y1, Ax, Ay, up) :-
     Ay2 =< 6,
     assertz(pont_v([Ax,Ay],[Ax,Ay2])).
 
+% version pur pour l'utiliser dans MinMax
+tourner_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y1, Ax, Ay, up, etat(L1, L2, L3, L4, PH_f, PV_f)) :-
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    delete(PH, [[Xmin,Y1],[Xmax,Y1]], PH_f),
+    Ay2 is Ay + 1,
+    Ay2 =< 6,
+    append(PV, [[[Ax,Ay],[Ax,Ay2]]], PV_f).
+
 tourner_pont(X1, Y1, X2, Y1, Ax, Ay, down) :-
     Xmin is min(X1,X2), Xmax is max(X1,X2),
     retract(pont_h([Xmin,Y1],[Xmax,Y1])),
     Ay2 is Ay - 1,
     Ay2 >= 1,
     assertz(pont_v([Ax,Ay2],[Ax,Ay])).
+
+% version pur pour l'utiliser dans MinMax
+tourner_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y1, Ax, Ay, up, etat(L1, L2, L3, L4, PH_f, PV_f)) :-
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    delete(PH, [[Xmin,Y1],[Xmax,Y1]], PH_f),
+    Ay2 is Ay - 1,
+    Ay2 >= 1,
+    append(PV, [[[Ax,Ay2],[Ax,Ay]]], PV_f).
 
 % Tourner un pont V (X1=X2) sur l'axe (Ax,Ay)
 % sens = right (nouveau pont H vers la droite) ou left (vers la gauche)
@@ -183,6 +235,14 @@ tourner_pont(X1, Y1, X1, Y2, Ax, Ay, right) :-
     Ax2 =< 6,
     assertz(pont_h([Ax,Ay],[Ax2,Ay])).
 
+% version pur pour l'utiliser dans MinMax
+tourner_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y1, Ax, Ay, up, etat(L1, L2, L3, L4, PH_f, PV_f)) :-
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f),
+    Ax2 is Ax + 1,
+    Ax2 =< 6,
+    append(PH, [[[Ax,Ay],[Ax2,Ay]]], PH_f).
+
 tourner_pont(X1, Y1, X1, Y2, Ax, Ay, left) :-
     Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
     retract(pont_v([X1,Ymin],[X1,Ymax])),
@@ -190,6 +250,13 @@ tourner_pont(X1, Y1, X1, Y2, Ax, Ay, left) :-
     Ax2 >= 1,
     assertz(pont_h([Ax2,Ay],[Ax,Ay])).
 
+% version pur pour l'utiliser dans MinMax
+tourner_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y1, Ax, Ay, up, etat(L1, L2, L3, L4, PH_f, PV_f)) :-
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f),
+    Ax2 is Ax - 1,
+    Ax2 >= 1,
+    append(PH, [[[Ax,Ay],[Ax2,Ay]]], PH_f).
 
 % ----------------------------------------------------------------------------------------
 %                               fonctions pour l'IA 
@@ -397,31 +464,17 @@ get_value(Etat, Joueur, Valeur):-
 % fonction qui va return pour chaque lutins du joueur les actions possibles. (sera utile pour minMax)
 generer_mouvement(Etat, Joueur, Mouvement).
 % a implémenter
+    % idées  : 
+    % on va appeler les fonctions heuristic1 et heuristic2 
+    % on va ensuite stocker la suite de mouvement dans Mouvement (qui est une liste de liste de mouvement).
+    % on peut stocker des fonctions dans une liste. on pourra les appeler avec le prédicat call()/1
 
+% heuristic qui déplace le lutins à proximité du lutins énnemie qui a le moins de ponts disponible autour de lui
+% c'est une sorte de stratégie offensive
+heuristic1_ia(Etat, Joueur, Mouvement).
+% a implémenter
 
-
-
-%  fonction de deplacement qui renvoie un nouveau etat a pârtir de la copie
-
-
-% calcule la case finale depuis (X,Y) dans la direction Dir en utilisant Etat
-%et renvoie aussi la liste des ponts parcouru pour que apres on puisse choisir le pond a supprimer ou modifier
-calculer_case_finale(Etat, X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
-    pont_adjacent(Etat, X, Y, Dir, X2, Y2),
-    dans_plateau(X2, Y2),
-    \+ occupe_etat(Etat, X2, Y2), !,
-    calculer_case_finale(Etat, X2, Y2, Dir, Xf, Yf, Reste).
-
-calculer_case_finale(_, X, Y, _, X, Y, []).
-
-% calcule le nouvelle etat apres application du mouvement
-nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat) :-
-    lutins_joueur(Joueur, Etat, L),
-    select([Xs,Ys], L, LTemp), !,
-    append(LTemp, [[Xf,Yf]], NouvelleL),
-    remplacer_lutins(Joueur, Etat, NouvelleL, NouvelEtat).
-
-% version pure de deplacement reservee a l'IA retourne NouvelEtat cets cette focntion qui doit etre appele dans le minmax pour deplacer le lutin
-deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, NouvelEtat) :-
-    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
-    nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat).
+% heuristic qui déplace notre lutins avec le moins de ponts autours de lui vers une position plus safe
+% stratégie défensive
+heuristic2_ia(Etat, Joueur, Mouvement).
+% a implémenter
