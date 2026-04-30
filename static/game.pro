@@ -236,7 +236,7 @@ tourner_pont(X1, Y1, X1, Y2, Ax, Ay, right) :-
     assertz(pont_h([Ax,Ay],[Ax2,Ay])).
 
 % version pur pour l'utiliser dans MinMax
-tourner_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X2, Y1, Ax, Ay, up, etat(L1, L2, L3, L4, PH_f, PV_f)) :-
+tourner_pont_ia(etat(L1, L2, L3, L4, PH, PV), X1, Y1, X1, Y2, Ax, Ay, up, etat(L1, L2, L3, L4, PH_f, PV_f)) :-
     Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
     delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f),
     Ax2 is Ax + 1,
@@ -471,10 +471,95 @@ generer_mouvement(Etat, Joueur, Mouvement).
 
 % heuristic qui déplace le lutins à proximité du lutins énnemie qui a le moins de ponts disponible autour de lui
 % c'est une sorte de stratégie offensive
-heuristic1_ia(Etat, Joueur, Mouvement).
-% a implémenter
+% (a l'aire de fonctionner correctement)
+heuristic1_ia(Etat, Joueur, Mouvement):-
+    Etat = etat(L1, L2, L3, L4, PH, PV),
+
+    % récupère tous les lutins ennemies
+    joueurs_ennemis(Joueur, Ennemis),
+    findall(Pos, 
+    (member(E, Ennemis), lutins_joueur(E, Etat, Ls), member(Pos, Ls)),
+    Lutins_ennemis_total),
+
+    % récupère tout les ponts autours de chaque lutins énnemie
+    maplist(nb_ponts(Etat), Lutins_ennemis_total, Bridges),
+
+    % récupère le lutins avec le moins de ponts autours de lui
+    min_list(Bridges, Min),
+    nth0(Index, Bridges, Min),
+    nth0(Index, Lutins_ennemis_total, Cible),
+
+    % récupère les lutins du joueur
+    lutins_joueur(Joueur, Etat, Lutins_joueur),
+    choisir_lutin_proche(Lutins_joueur, Cible, [X1, Y1]),
+
+    % génère le mouvement pour déplacer le lutin
+    choisir_direction([X1, Y1], Cible, Dir),
+    calculer_case_finale(Etat, X1, Y1, Dir, Xf, Yf, Ponts),
+
+    Mouvement = deplacement_ia(Joueur, X1, Y1, Dir, Xf, Yf, Ponts, Etat, NouvelEtat).
+
+% calcule a distance entre 2 positions
+distance([X1,Y1], [X2,Y2], D) :-
+    DX is abs(X1 - X2),
+    DY is abs(Y1 - Y2),
+    D is DX + DY.
+
+% choisi le lutins le plus proche d'une cible
+choisir_lutin_proche(Lutins, Cible, LutinChoisi) :-
+    maplist(distance(Cible), Lutins, Distances),
+    min_list(Distances, Min),
+    nth0(Index, Distances, Min),
+    nth0(Index, Lutins, LutinChoisi).
+
+% choisi la prochaine direction à prendre pour aller à la position cible
+choisir_direction([X1, Y1], [X2, Y2], Dir):-
+    (X2 > X1 -> Dir = right;
+    X2 < X1 -> Dir = left;
+    Y1 > Y2 -> Dir = up;
+    Y1 < Y2 -> Dir = down).
 
 % heuristic qui déplace notre lutins avec le moins de ponts autours de lui vers une position plus safe
 % stratégie défensive
-heuristic2_ia(Etat, Joueur, Mouvement).
-% a implémenter
+% ( elle a quelques erreur parfois )
+heuristic2_ia(Etat, Joueur, Mouvement):-
+
+    % récupère les lutins du joueur
+    lutins_joueur(Joueur, Etat, Lutins_joueur),
+
+    % Trouver tous les lutins qui peuvent bouger
+    findall(
+        [Xs, Ys],
+        (member([Xs, Ys], Lutins_joueur),
+         peut_bouger_lutin(Etat, Xs, Ys)),
+        LutinsBougeables
+    ),
+
+    % on échoue si il n'y en a pas
+    LutinsBougeables \=[],
+
+    % récupère le lutins avec le moins de ponts autours de lui
+    maplist(nb_ponts(Etat), LutinsBougeables, Bridges),
+    min_list(Bridges, Min),
+    nth0(Index, Bridges, Min),
+    nth0(Index, LutinsBougeables, [Xs, Ys]),
+    connectivite(Etat, [Xs,Ys], Connec1),
+
+    % chercher un mouvement qui améliore la connectivité
+    member(Dir, [up, down, left, right]),
+    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, _Ponts),
+    connectivite(Etat, [Xf, Yf], Connec2),
+    Connec2 >= Connec1, 
+    % la fonction crash lorsque je met > alors je reste sur >= même si ce n'est pas la meilleur solution
+    
+    % recalculer la destination avec les ponts (pour avoir la valeur)
+    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
+    
+    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _).
+
+% regarde si on peut bouger un lutin en particulier
+peut_bouger_lutin(Etat, X, Y) :-
+    member(Dir, [up, down, left, right]),
+    pont_adjacent(Etat, X, Y, Dir, X2, Y2),
+    dans_plateau(X2, Y2),
+    \+ occupe_etat(Etat, X2, Y2).
