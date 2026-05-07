@@ -160,6 +160,10 @@ noteVocale.addEventListener('click',()=>{
 
 //  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog----------------------------------- \\
 
+
+let turn = 'vert';//pour la gestion des  tours
+
+
 // le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
 
 // Génère un identifiant unique normalisé pour un pont (coordonnées minimales en premier)
@@ -546,6 +550,13 @@ function activatearrows(lutin){
          // ici je recupere les corddonees de la case source du lutin qu'on veut deplacer
          const xs = lutin.parentElement.dataset.x;
          const ys = lutin.parentElement.dataset.y;
+         console.log("je suis appelet ");
+
+         if (color!==turn){
+             alert("pas ton tours");
+             return;
+         }
+
 
          const allarrows = document.querySelectorAll(".arrow");
          allarrows.forEach(arrow=>{
@@ -559,6 +570,7 @@ function activatearrows(lutin){
                               const pontsRaw = rep.lookup("Ponts");
                               const pontsArr = fromList(pontsRaw);
                               refresh_joueurs();
+                              next_player();// ici on change le tour pour le passer au prichain joueur
                               if (pontsArr && pontsArr.length > 0) {
                                   const ponts = pontsArr.map(fromPontTerm);
                                   proposer_actions_ponts(ponts);
@@ -592,12 +604,42 @@ function move_luttin(){
 }
 
 
+const turnToPlayer = { vert: 'player3', bleu: 'player2', jaune: 'player4', rouge: 'player1' };
+
+function highlight_turn(color) {
+    document.querySelectorAll('.turns div').forEach(d => d.classList.remove('active-turn'));
+    const cls = turnToPlayer[color];
+    if (cls) document.querySelector('.' + cls)?.classList.add('active-turn');
+}
+
+function next_player(){
+
+    if (turn==='vert'){
+        turn='bleu';
+    }
+    else if (turn==='bleu'){
+        turn='jaune';
+    }
+    else if (turn==='jaune') {
+        turn='rouge';
+    }
+    else {
+        turn='vert';
+    }
+
+    highlight_turn(turn);
+}
+
+
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 function main(){
+
      print_board();
      placer_les_joueurs();
      move_luttin();
      placer_les_ponts();
+     highlight_turn(turn);
 
 }
 

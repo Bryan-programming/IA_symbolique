@@ -198,7 +198,7 @@ body{
 
 .box {
     height: 70%;
-    background-color: white;
+    background-color: whitesmoke;
     border: 2px solid black;
     padding: 30px;
     border-radius: 20px;
@@ -235,7 +235,7 @@ body{
 .pont-h {
     width: 50px;
     height: 12px;
-    background: white;
+    background: whitesmoke;
     position: relative;
 }
 
@@ -243,7 +243,7 @@ body{
 .pont-v {
     width: 16px;
     height: 40px;
-    background: white;
+    background: whitesmoke;
     position: relative;
 }
 
@@ -429,3 +429,55 @@ body{
 .arrow:hover{
     background: red;
 }
+
+
+/*c'est  la partie css de la barre des tours------------------------------------------------------------------------------------------- */
+
+.turns {
+    display: flex;          /* Aligne les enfants sur une ligne */
+    gap: 15px;             /* Ajoute de l'espace entre chaque rectangle */
+    padding: 20px;         /* Espace à l'intérieur du conteneur */
+    justify-content: center; /* Centre les rectangles horizontalement */
+    background-color:whitesmoke;
+    border-radius: 8px;
+    margin-top: 80px;
+    margin-left: 350px;
+}
+
+.turns div {
+    flex: 1;
+    height: 100px;         /* Hauteur de tes rectangles */
+    min-width: 120px;      /* Largeur minimale pour éviter qu'ils ne soient trop écrasés */
+    border-radius: 5px;    /* Arrondit légèrement les angles */
+    display: flex;
+    flex-direction: column;
+    align-items: center;   /* Centre le texte verticalement (si tu en ajoutes) */
+    justify-content: center; /* Centre le texte horizontalement */
+    font-family: sans-serif;
+    font-weight: bold;
+    color: white;
+}
+
+.turns p {
+    margin-bottom: 0;
+    width: auto;
+    color: darkgrey;
+}
+
+.turns div p + p {
+    margin-top: 8px;
+    margin-left:-35px;
+}
+
+/* Couleurs distinctes pour chaque joueur dans les cases dans la bare des tours */
+.player1 { background-color: #660000; } /* Rouge */
+.player2 { background-color: #003366; } /* Bleu */
+.player3 { background-color: #1B4332; } /* Vert */
+.player4 { background-color:#C49102; } /* Jaune */
+
+.active-turn {
+    filter: brightness(2);
+    transform: scale(1.1);
+
+}
+
