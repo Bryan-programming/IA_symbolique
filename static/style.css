@@ -19,6 +19,7 @@ html {
 
 body{
     height: 100%;
+    background-color: rgb(37, 37, 37);
 }
 
 section {
@@ -87,6 +88,7 @@ body{
   width: 40%;
   background-color: rgb(36, 36, 36);
   height: 100%;
+  margin-left: 20px;
 }
 
 .chat-form{
@@ -193,7 +195,7 @@ body{
     justify-content: center;
     gap: 5px;
     width: 100%;
-    margin-left:50px;
+    margin-left:100px;
 }
 
 .box {
@@ -203,12 +205,15 @@ body{
     padding: 30px;
     border-radius: 20px;
     width: 500px;
+    min-width: 500px;
+    max-width: 500px;
     display: flex;
     align-items: center;
     min-height: 500px;
     max-height: 550px;
     position: relative;
     top: 10%;
+    overflow: hidden;
 }
 
 
@@ -434,39 +439,37 @@ body{
 /*c'est  la partie css de la barre des tours------------------------------------------------------------------------------------------- */
 
 .turns {
-    display: flex;          /* Aligne les enfants sur une ligne */
-    gap: 15px;             /* Ajoute de l'espace entre chaque rectangle */
-    padding: 20px;         /* Espace à l'intérieur du conteneur */
-    justify-content: center; /* Centre les rectangles horizontalement */
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    padding: 15px;
     background-color:whitesmoke;
     border-radius: 8px;
-    margin-top: 80px;
-    margin-left: 350px;
+    margin-top: -50px;
+    margin-left: 20px;
 }
 
 .turns div {
-    flex: 1;
-    height: 100px;         /* Hauteur de tes rectangles */
-    min-width: 120px;      /* Largeur minimale pour éviter qu'ils ne soient trop écrasés */
-    border-radius: 5px;    /* Arrondit légèrement les angles */
+    height: 55px;
+    min-width: 60px;
+    border-radius: 5px;
     display: flex;
     flex-direction: column;
-    align-items: center;   /* Centre le texte verticalement (si tu en ajoutes) */
-    justify-content: center; /* Centre le texte horizontalement */
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     font-family: sans-serif;
     font-weight: bold;
     color: white;
 }
 
-.turns p {
-    margin-bottom: 0;
-    width: auto;
-    color: darkgrey;
-}
 
-.turns div p + p {
-    margin-top: 8px;
-    margin-left:-35px;
+
+.turns p {
+    margin: 0;
+    width: auto;
+    color: black;
+    font-size: 9px;
 }
 
 /* Couleurs distinctes pour chaque joueur dans les cases dans la bare des tours */
@@ -478,6 +481,8 @@ body{
 .active-turn {
     filter: brightness(2);
     transform: scale(1.1);
+    box-shadow:0 0 2px 4px rgba(0, 0, 0, 0.2);
+
 
 }
 
