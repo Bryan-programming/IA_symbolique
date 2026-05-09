@@ -380,7 +380,7 @@ connectivite(Etat, [X,Y], Taille) :-
 
 % atteignable(+Etat, +Pos, -Res, +Visited)
 % cas de base : Pos est atteignable depuis lui-même
-atteignable(_, Pos, Pos, _).
+atteignable(_, Pos, Pos, _):- !.
 % cas récursif : Res est atteignable depuis Pos
 % si on peut aller vers un noeud voisin non visité, et que Res est atteignable depuis ce noeud
 atteignable(Etat, [X,Y], Res, Visited) :-
@@ -461,13 +461,12 @@ get_value(Etat, Joueur, Valeur):-
     score_ennemis(Etat, Joueur, Score_enemie_totale),
     Valeur is Score_joueur - (Score_enemie_totale / 4). % soustraction entre le score du joueur et la moyenne des scores ennemies
 
-% fonction qui va return pour chaque lutins du joueur les actions possibles. (sera utile pour minMax)
-generer_mouvement(Etat, Joueur, Mouvement).
-% a implémenter
-    % idées  : 
-    % on va appeler les fonctions heuristic1 et heuristic2 
-    % on va ensuite stocker la suite de mouvement dans Mouvement (qui est une liste de liste de mouvement).
-    % on peut stocker des fonctions dans une liste. on pourra les appeler avec le prédicat call()/1
+% fonction qui va return pour un joueur les actions possibles en suivant les 2 heuristics. (sera utile pour minMax)
+generer_mouvement(Etat, Joueur, Mouvement):-
+    heuristic1_ia(Etat, Joueur, Mouvement).
+
+generer_mouvement(Etat, Joueur, Mouvement):-
+    heuristic2_ia(Etat, Joueur, Mouvement).
 
 % heuristic qui déplace le lutins à proximité du lutins énnemie qui a le moins de ponts disponible autour de lui
 % c'est une sorte de stratégie offensive
@@ -497,6 +496,10 @@ heuristic1_ia(Etat, Joueur, Mouvement):-
     choisir_direction([X1, Y1], Cible, Dir),
     calculer_case_finale(Etat, X1, Y1, Dir, Xf, Yf, Ponts),
 
+    % si le lutin ne bouge pas, le programme crash
+    % pour éviter ça on fait fail la fonction
+    (X1 = Xf, Y1 = Yf -> fail ; true),
+
     Mouvement = deplacement_ia(Joueur, X1, Y1, Dir, Xf, Yf, Ponts, Etat, NouvelEtat).
 
 % calcule a distance entre 2 positions
@@ -517,7 +520,7 @@ choisir_direction([X1, Y1], [X2, Y2], Dir):-
     (X2 > X1 -> Dir = right;
     X2 < X1 -> Dir = left;
     Y1 > Y2 -> Dir = up;
-    Y1 < Y2 -> Dir = down).
+    Dir = down).
 
 % heuristic qui déplace notre lutins avec le moins de ponts autours de lui vers une position plus safe
 % stratégie défensive
@@ -548,6 +551,11 @@ heuristic2_ia(Etat, Joueur, Mouvement):-
     % chercher un mouvement qui améliore la connectivité
     member(Dir, [up, down, left, right]),
     calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, _Ponts),
+
+    % si le lutin ne bouge pas, le programme crash
+    % pour éviter ça on fait fail la fonction
+    (Xs = Xf, Ys = Yf -> fail ; true),
+
     connectivite(Etat, [Xf, Yf], Connec2),
     Connec2 >= Connec1, 
     % la fonction crash lorsque je met > alors je reste sur >= même si ce n'est pas la meilleur solution
@@ -557,9 +565,131 @@ heuristic2_ia(Etat, Joueur, Mouvement):-
     
     Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _).
 
+% fallback : si aucune direction n'améliore la connectivité pour l'heuristic 2,
+% on prend simplement la première direction valide
+heuristic2_ia(Etat, Joueur, Mouvement) :-
+    lutins_joueur(Joueur, Etat, Lutins),
+    member([Xs,Ys], Lutins),
+    member(Dir, [up,down,left,right]),
+    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
+    (Xs \= Xf ; Ys \= Yf),   % le lutin bouge vraiment
+    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _),
+    !.
+
 % regarde si on peut bouger un lutin en particulier
 peut_bouger_lutin(Etat, X, Y) :-
     member(Dir, [up, down, left, right]),
     pont_adjacent(Etat, X, Y, Dir, X2, Y2),
     dans_plateau(X2, Y2),
     \+ occupe_etat(Etat, X2, Y2).
+
+% cas de base : la profondeur atteint 0
+minMax(Etat, JoueurIA, _JoueurActuel, 0, none, Valeur) :-
+    !,
+    get_value(Etat, JoueurIA, Valeur).
+
+% cas de base : la partie est terminé
+minMax(Etat, JoueurIA, _JoueurActuel, Profondeur, none, Valeur) :-
+    game_over(Etat),
+    !,
+    get_value(Etat, JoueurIA, Valeur).
+
+% MinMax pour le joueur actuel (on veut maximiser)
+minMax(Etat, Joueur_IA, Joueur_IA, Profondeur, Meilleur_mouvemnt, Valeur):-
+    % verification de base
+    Profondeur > 0,
+    \+ game_over(Etat),
+
+    % récupère tout les mouvement possibles (en utilisant les 2 heuristics)
+    findall(Mvt, 
+    generer_mouvement(Etat, Joueur_IA, Mvt),
+    Mouvements),
+
+    % il faut au moins 1 mouvement de la part de l'IA
+    Mouvements \= [],
+
+    % pour chaque mouvement possible on évalue le résultat
+   findall(Val-Mvt,
+        (   member(Mvt, Mouvements),
+            appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, NouvelEtat),
+            next_player(JoueurIA, JoueurSuivant),
+            NewProfondeur is Profondeur - 1,
+            minMax(NouvelEtat, JoueurIA, JoueurSuivant, NewProfondeur, _, Val)
+        ),
+        ListeValeurs),
+
+   % on récupère le mouvement avec le meilleur etat
+   % (c'est une fonction prédéfinie SWI)
+   max_member(Valeur-Meilleur_mouvemnt, ListeValeurs).
+
+% MinMax pour les joueurs ennemie (ils veulent minimiser notre valeur)
+% le 3ème paramètre est le joueur qui joue
+minMax(Etat, Joueur_IA, JoueurActuel, Profondeur, Meilleur_mouvemnt, Valeur):-
+    % verification de base
+    Profondeur > 0,
+    \+ game_over(Etat),
+    JoueurActuel \= Joueur_IA,
+
+    % récupère tout les mouvement possibles (en utilisant les 2 heuristics)
+    findall(Mvt, 
+    generer_mouvement(Etat, Joueur, Mvt),
+    Mouvements),
+
+    % il faut au moins 1 mouvement de la part de l'IA
+    Mouvements \= [],
+
+    % Pour chaque mouvement, calculer la valeur
+    findall(Val-Mvt,
+        (   member(Mvt, Mouvements),
+            appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, NouvelEtat),
+            next_player(JoueurActuel, JoueurSuivant),
+            NewProfondeur is Profondeur - 1,
+            minMax(NouvelEtat, JoueurIA, JoueurSuivant, NewProfondeur, _, Val)
+        ),
+        ListeValeurs),
+    
+    % Garder celui avec la valeur minimale (adversaire minimise notre score)
+    min_member(Valeur-MeuilleurMouvement, ListeValeurs).
+
+% fonction qui supprime tout les ponts de la liste passé en paramètre.
+retirer_liste_ponts(Etat, [], Etat).
+
+retirer_liste_ponts(Etat, [pont(X1,Y1,X2,Y2)|Rest], EtatFinal) :-
+    retirer_pont_ia(Etat, X1, Y1, X2, Y2, EtatIntermediaire),
+    retirer_liste_ponts(EtatIntermediaire, Rest, EtatFinal).
+
+% Applique un mouvement et retire TOUS les ponts traversés
+% j'ai crée cet fonction par facilité pour éviter de devoir tester tous les cas de 
+% pivotage de ponts qui nous aurai donnée des millions d'état suplémentaire à tester. 
+% néamoins, on peut toujours essayer d'améliorer cet fonction par example en supprimant les
+% ponts autour du lutins ennemie le plus faible. ça reste à discuter.
+appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, EtatFinal) :-
+    Mvt = deplacement_ia(Joueur, _, _, _, _, _, Ponts, Etat, EtatApresDepl),
+    call(Mvt),  % Exécute deplacement_ia,
+    retirer_liste_ponts(EtatApresDepl, Ponts, EtatFinal).
+
+next_player(1, 2).
+next_player(2, 3).
+next_player(3, 4).
+next_player(4, 1).
+
+/* notes suplémentaires : 
+
+- Dans notre code, un joueur ne peut supprimer ou pivoter que les ponts qu'il a traversé
+mais dans l'énoncé on dit que le joueur peut modifier n'importe quel pont.
+
+- Dans la fonction game_over, un joueur est déclaré comme perdant si il ne peut bouger aucun lutins
+mais dans l'énoncé il est dit qu'on ne perd que si chaque lutins n'a aucun pont autour de lui. Donc
+dans la situation ou un lutin a des ponts mais qu'ils sont bloqué par des joueurs ennemeie, il n'est pas
+sensé être déclaré perdant et il peut tout de même modifier des ponts lors de son tour.
+
+- Il se peut que les fonctions heuristic ne retourne pas de mouvement car elles sont designer pour ne donner
+des mouvement que si l'état final est plus avantageux que l'état initial. Donc il se peut qu'en fin de partie aucune 
+IA n'arrive a bouger car elle ne parviennent pas à déterminer un mouvement avantageux à réaliser. Pour résoudre ça, je
+pensais à créer une fonction fallback à n'utiliser que dans le cas ou les 2 heuristics fail. il faut une fonction qui permette 
+de générer le premier mouvement valide que l'ia arrive à déterminer (même si il n'est pas optimal).
+
+- Selon l'énoncé le jeu est sensé être joué à 2, 3 ou 4 joueur mais dans nos fonction on n'est parti du principe que le 
+jeu est toujours constitué de 4 joueurs. On devrait le mentionner dans le rapport. 
+
+*/
