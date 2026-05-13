@@ -563,40 +563,54 @@ minMax(Etat, Joueur_IA, JoueurActuel, Profondeur, Alpha, Beta, MeilleurMvt, Vale
 
 % maximiser : parcourt les mouvements et garde le meilleur pour l'IA
 % cas de base : plus de mouvements
+% cas de base : liste vide
+maximiser(_, _, _, _, _, _, [], MvtAcc, ValAcc, MvtAcc, ValAcc) :- !.
+
+% cas récursif
 maximiser(Etat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta,
           [Mvt|Reste], MvtAcc, ValAcc, MeilleurMvt, Valeur) :-
-    \+ doit_couper(Alpha, Beta),
-    appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, NouvelEtat),
-    minMax(NouvelEtat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta, _, ValMvt),
-    ( inf_gt(ValMvt, ValAcc) ->
-        prolog_max(Alpha, ValMvt, NouvelAlpha),
-        ( doit_couper(NouvelAlpha, Beta) ->
-            MeilleurMvt = Mvt, Valeur = ValMvt  % coupure immédiate
-        ;
-            maximiser(Etat, JoueurIA, JoueurSuivant, Profondeur,
-                      NouvelAlpha, Beta, Reste, Mvt, ValMvt, MeilleurMvt, Valeur)
-        )
+    ( doit_couper(Alpha, Beta) ->
+        MeilleurMvt = MvtAcc, Valeur = ValAcc
     ;
+        appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, NouvelEtat),
+        minMax(NouvelEtat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta, _, ValMvt),
+        ( inf_gt(ValMvt, ValAcc) ->
+            NouvelMvtAcc = Mvt,
+            NouvelValAcc = ValMvt,
+            prolog_max(Alpha, ValMvt, NouvelAlpha)
+        ;
+            NouvelMvtAcc = MvtAcc,
+            NouvelValAcc = ValAcc,
+            NouvelAlpha  = Alpha
+        ),
         maximiser(Etat, JoueurIA, JoueurSuivant, Profondeur,
-                  Alpha, Beta, Reste, MvtAcc, ValAcc, MeilleurMvt, Valeur)
+                  NouvelAlpha, Beta, Reste, NouvelMvtAcc, NouvelValAcc,
+                  MeilleurMvt, Valeur)
     ).
-% garde le pire pour l'IA ennemie
+
+% cas de base : liste vide
+minimiser(_, _, _, _, _, _, [], MvtAcc, ValAcc, MvtAcc, ValAcc) :- !.
+
+% cas récursif
 minimiser(Etat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta,
           [Mvt|Reste], MvtAcc, ValAcc, MeilleurMvt, Valeur) :-
-    \+ doit_couper(Alpha, Beta),
-    appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, NouvelEtat),
-    minMax(NouvelEtat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta, _, ValMvt),
-    ( inf_lt(ValMvt, ValAcc) ->
-        prolog_min(Beta, ValMvt, NouvelBeta),
-        ( doit_couper(Alpha, NouvelBeta) ->
-            MeilleurMvt = Mvt, Valeur = ValMvt  % coupure immédiate
-        ;
-            minimiser(Etat, JoueurIA, JoueurSuivant, Profondeur,
-                      Alpha, NouvelBeta, Reste, Mvt, ValMvt, MeilleurMvt, Valeur)
-        )
+    ( doit_couper(Alpha, Beta) ->
+        MeilleurMvt = MvtAcc, Valeur = ValAcc
     ;
+        appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, NouvelEtat),
+        minMax(NouvelEtat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta, _, ValMvt),
+        ( inf_lt(ValMvt, ValAcc) ->
+            NouvelMvtAcc = Mvt,
+            NouvelValAcc = ValMvt,
+            prolog_min(Beta, ValMvt, NouvelBeta)
+        ;
+            NouvelMvtAcc = MvtAcc,
+            NouvelValAcc = ValAcc,
+            NouvelBeta   = Beta
+        ),
         minimiser(Etat, JoueurIA, JoueurSuivant, Profondeur,
-                  Alpha, Beta, Reste, MvtAcc, ValAcc, MeilleurMvt, Valeur)
+                  Alpha, NouvelBeta, Reste, NouvelMvtAcc, NouvelValAcc,
+                  MeilleurMvt, Valeur)
     ).
 
 % fonction qui supprime tous les ponts de la liste passée en paramètre
