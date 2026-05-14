@@ -92,14 +92,14 @@ regle_rep(ordre,7,
  [ "d abord les verts, puis les bleus, puis les jaunes puis les rouges" ] ).
 
 regle_rep(equipe,5,
-  [ [ combien ], 3, [ lutins ], 5, [ equipe ] ], % ici par contre 3 correspond au nombre de mots max autorisé avant de trouver lutins
+  [ [ combien ], 3, [ lutins ], 5, [ equipe ] ],
   [ "chaque equipe compte ", X_in_chars, " lutins" ]) :- 
         nb_lutins(X),
         write_to_chars(X,X_in_chars).
 
 regle_rep(deplacer,5,
   [ [ deplacer ], 3, [ lutins ], 5, [ case ], 3, [occupee] ],
-  [ "non" ]). % attention à bien mettre des double quotes, ça m'a pris 4H pour trouver ce bug
+  [ "non" ]).
 
 regle_rep(pont,3,
   [ [ pont ], 3, [ retirer ], 5, [ deplace ], 3, [lutin] ],
@@ -113,16 +113,8 @@ regle_rep(pont,3,
 /*                                                                       */
 /* --------------------------------------------------------------------- */
 
-% lire_question(L_Mots)
-
 lire_question(Input, LMots) :- read_atomics(Input, LMots).
 
-
-
-/*****************************************************************************/
-% my_char_type(+Char,?Type)
-%    Char is an ASCII code.
-%    Type is whitespace, punctuation, numeric, alphabetic, or special.
 
 my_char_type(46,period) :- !.
 my_char_type(X,alphanumeric) :- X >= 65, X =< 90, !.
@@ -135,74 +127,35 @@ my_char_type(X,punctuation) :- X >= 91, X =< 96, !.
 my_char_type(X,punctuation) :- X >= 123, X =< 126, !.
 my_char_type(_,special).
 
-
-/*****************************************************************************/
-% lower_case(+C,?L)
-%   If ASCII code C is an upper-case letter, then L is the
-%   corresponding lower-case letter. Otherwise L=C.
-
 lower_case(X,Y) :-
     X >= 65,
     X =< 90,
     Y is X + 32, !.
-
 lower_case(X,X).
-
-
-/*****************************************************************************/
-% read_lc_string(-String)
-%  Reads a line of input into String as a list of ASCII codes,
-%  with all capital letters changed to lower case.
 
 read_lc_string(String) :-
     get0(FirstChar),
     lower_case(FirstChar,LChar),
     read_lc_string_aux(LChar,String).
 
-    read_lc_string_aux(10,[]) :- !.  % end of line
-
-read_lc_string_aux(-1,[]) :- !.  % end of file
-
+read_lc_string_aux(10,[]) :- !.
+read_lc_string_aux(-1,[]) :- !.
 read_lc_string_aux(LChar,[LChar|Rest]) :- read_lc_string(Rest).
-
-
-/*****************************************************************************/
-% extract_word(+String,-Rest,-Word) (final version)
-%  Extracts the first Word from String; Rest is rest of String.
-%  A word is a series of contiguous letters, or a series
-%  of contiguous digits, or a single special character.
-%  Assumes String does not begin with whitespace.
 
 extract_word([C|Chars],Rest,[C|RestOfWord]) :-
     my_char_type(C,Type),
     extract_word_aux(Type,Chars,Rest,RestOfWord).
 
-    extract_word_aux(special,Rest,Rest,[]) :- !.
-% if Char is special, don't read more chars.
-
+extract_word_aux(special,Rest,Rest,[]) :- !.
 extract_word_aux(Type,[C|Chars],Rest,[C|RestOfWord]) :-
     my_char_type(C,Type), !,
-extract_word_aux(Type,Chars,Rest,RestOfWord).
-
-extract_word_aux(_,Rest,Rest,[]).   % if previous clause did not succeed.
-
-
-/*****************************************************************************/
-% remove_initial_blanks(+X,?Y)
-%   Removes whitespace characters from the
-%   beginning of string X, giving string Y.
+    extract_word_aux(Type,Chars,Rest,RestOfWord).
+extract_word_aux(_,Rest,Rest,[]).
 
 remove_initial_blanks([C|Chars],Result) :-
     my_char_type(C,whitespace), !,
-remove_initial_blanks(Chars,Result).
-
-remove_initial_blanks(X,X).   % if previous clause did not succeed.
-
-
-/*****************************************************************************/
-% digit_value(?D,?V)
-%  Where D is the ASCII code of a digit,
-%  V is the corresponding number.
+    remove_initial_blanks(Chars,Result).
+remove_initial_blanks(X,X).
 
 digit_value(48,0).
 digit_value(49,1).
@@ -215,56 +168,26 @@ digit_value(55,7).
 digit_value(56,8).
 digit_value(57,9).
 
-
-/*****************************************************************************/
-% string_to_number(+S,-N)
-%  Converts string S to the number that it
-%  represents, e.g., "234" to 234.
-%  Fails if S does not represent a nonnegative integer.
-
 string_to_number(S,N) :-
     string_to_number_aux(S,0,N).
-
-    string_to_number_aux([D|Digits],ValueSoFar,Result) :-
+string_to_number_aux([D|Digits],ValueSoFar,Result) :-
     digit_value(D,V),
     NewValueSoFar is 10*ValueSoFar + V,
-string_to_number_aux(Digits,NewValueSoFar,Result).
-
+    string_to_number_aux(Digits,NewValueSoFar,Result).
 string_to_number_aux([],Result,Result).
-
-
-/*****************************************************************************/
-% string_to_atomic(+String,-Atomic)
-%  Converts String into the atom or number of
-%  which it is the written representation.
 
 string_to_atomic([C|Chars],Number) :-
     string_to_number([C|Chars],Number), !.
-
 string_to_atomic(String,Atom) :- atom_codes(Atom,String).
-% assuming previous clause failed.
-
-
-/*****************************************************************************/
-% extract_atomics(+String,-ListOfAtomics) (second version)
-%  Breaks String up into ListOfAtomics
-%  e.g., " abc def  123 " into [abc,def,123].
 
 extract_atomics(String,ListOfAtomics) :-
     remove_initial_blanks(String,NewString),
     extract_atomics_aux(NewString,ListOfAtomics).
-
-    extract_atomics_aux([C|Chars],[A|Atomics]) :-
+extract_atomics_aux([C|Chars],[A|Atomics]) :-
     extract_word([C|Chars],Rest,Word),
-    string_to_atomic(Word,A),       % <- this is the only change
-extract_atomics(Rest,Atomics).
-
+    string_to_atomic(Word,A),
+    extract_atomics(Rest,Atomics).
 extract_atomics_aux([],[]).
-
-
-/*****************************************************************************/
-% clean_string(+String,-Cleanstring)
-%  removes all punctuation characters from String and return Cleanstring
 
 clean_string([C|Chars],L) :-
     my_char_type(C,punctuation),
@@ -275,17 +198,9 @@ clean_string([C|[]],[]) :-
     my_char_type(C,punctuation), !.
 clean_string([C|[]],[C]).
 
-
-/*****************************************************************************/
-% read_atomics(-ListOfAtomics)
-%  Reads a line of input, removes all punctuation characters, and converts
-%  it into a list of atomic terms, e.g., [this,is,an,example].
-
 read_atomics(Input, ListOfAtomics) :-
-
     clean_string(Input,Cleanstring),
     extract_atomics(Cleanstring,ListOfAtomics).
-
 
 
 /* --------------------------------------------------------------------- */
@@ -301,10 +216,6 @@ flatten_strings_in_sentences([W|T],S) :-
     string_as_list(W,L1),
     flatten_strings_in_sentences(T,L2),
     append(L1,L2,S).
-
-% Pour SWI-Prolog
-% string_as_list(W,L) :- string_to_list(W,L).
-
 
 % Pour tau-Prolog
 string_as_list(W,W).
@@ -333,12 +244,6 @@ postionLutinJoueur2([[1,2],[2,2],[3,1],[4,3],[5,2],[6,3]]).
 postionLutinJoueur3([[1,5],[3,5],[2,5],[4,4],[5,5],[6,4]]).
 postionLutinJoueur4([[1,6],[2,6],[3,3],[4,6],[5,6],[6,6]]).
 
-
-%ici jeu propose cette representation des ponds
-%elle est comforme avec ce qui est demande a lennonce
-%modifier la si vous avez une autre idee
-
-
 init_ponts_h :- casesPlateau(Cases), init_ponts_h_aux(Cases).
 
 init_ponts_h_aux([]).
@@ -365,20 +270,17 @@ tous_ponts_h(L) :- findall([[X1,Y1],[X2,Y2]], pont_h([X1,Y1],[X2,Y2]), L).
 tous_ponts_v(L) :- findall([[X1,Y1],[X2,Y2]], pont_v([X1,Y1],[X2,Y2]), L).
 
 
-%fonction pour le deplacement des luttins-------------------------------------------------------------------------------
+%----------------------- deplacement des luttins -------------------------------
 
 occupe(X,Y) :-
     postionLutinJoueur1(L1),
     member([X,Y], L1).
-
 occupe(X,Y) :-
     postionLutinJoueur2(L2),
     member([X,Y], L2).
-
 occupe(X,Y) :-
     postionLutinJoueur3(L3),
     member([X,Y], L3).
-
 occupe(X,Y) :-
     postionLutinJoueur4(L4),
     member([X,Y], L4).
@@ -387,36 +289,25 @@ dans_plateau(X,Y) :-
     X >= 1, X =< 6,
     Y >= 1, Y =< 6.
 
-
 pont_entre(X, Y, right, X2, Y) :-
     X2 is X + 1,
     pont_h([X,Y],[X2,Y]).
-
 pont_entre(X, Y, left, X2, Y) :-
     X2 is X - 1,
     pont_h([X2,Y],[X,Y]).
-
 pont_entre(X, Y, up, X, Y2) :-
     Y2 is Y + 1,
     pont_v([X,Y],[X,Y2]).
-
 pont_entre(X, Y, down, X, Y2) :-
     Y2 is Y - 1,
     pont_v([X,Y2],[X,Y]).
-
-
-
-%  calcule la case finale apres glissement — retourne aussi les ponts traversés
 
 calculer_destinationcase(X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
     pont_entre(X, Y, Dir, X2, Y2),
     dans_plateau(X2, Y2),
     \+ occupe(X2, Y2), !,
     calculer_destinationcase(X2, Y2, Dir, Xf, Yf, Reste).
-
 calculer_destinationcase(X, Y, _, X, Y, []).
-
-
 
 deplacer_lutin(1, Xs, Ys, Xf, Yf) :-
     postionLutinJoueur1(L),
@@ -424,30 +315,24 @@ deplacer_lutin(1, Xs, Ys, Xf, Yf) :-
     retract(postionLutinJoueur1(L)),
     append(LTemp, [[Xf,Yf]], NouvelleL),
     assertz(postionLutinJoueur1(NouvelleL)).
-
 deplacer_lutin(2, Xs, Ys, Xf, Yf) :-
     postionLutinJoueur2(L),
     select([Xs,Ys], L, LTemp), !,
     retract(postionLutinJoueur2(L)),
     append(LTemp, [[Xf,Yf]], NouvelleL),
     assertz(postionLutinJoueur2(NouvelleL)).
-
 deplacer_lutin(3, Xs, Ys, Xf, Yf) :-
     postionLutinJoueur3(L),
     select([Xs,Ys], L, LTemp), !,
     retract(postionLutinJoueur3(L)),
     append(LTemp, [[Xf,Yf]], NouvelleL),
     assertz(postionLutinJoueur3(NouvelleL)).
-
 deplacer_lutin(4, Xs, Ys, Xf, Yf) :-
     postionLutinJoueur4(L),
     select([Xs,Ys], L, LTemp), !,
     retract(postionLutinJoueur4(L)),
     append(LTemp, [[Xf,Yf]], NouvelleL),
     assertz(postionLutinJoueur4(NouvelleL)).
-
-
-% Calcule la case finale, retourne les ponts traversés et met à jour la base de connaissance
 
 deplacement(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts) :-
     calculer_destinationcase(Xs, Ys, Dir, Xf, Yf, Ponts),
@@ -458,19 +343,14 @@ deplacement(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts) :-
 /*                     GESTION DES PONTS                                 */
 /* --------------------------------------------------------------------- */
 
-% Retirer un pont — normalisation automatique des coordonnées
 retirer_pont(X1, Y1, X2, Y2) :-
     Y1 =:= Y2,
     Xmin is min(X1,X2), Xmax is max(X1,X2),
     retract(pont_h([Xmin,Y1],[Xmax,Y1])).
-
 retirer_pont(X1, Y1, X2, Y2) :-
     X1 =:= X2,
     Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
     retract(pont_v([X1,Ymin],[X1,Ymax])).
-
-% Tourner un pont H (Y1=Y2) sur l'axe (Ax,Ay)
-% sens = up (nouveau pont V vers le haut) ou down (vers le bas)
 
 tourner_pont(X1, Y1, X2, Y1, Ax, Ay, up) :-
     Xmin is min(X1,X2), Xmax is max(X1,X2),
@@ -478,24 +358,18 @@ tourner_pont(X1, Y1, X2, Y1, Ax, Ay, up) :-
     Ay2 is Ay + 1,
     Ay2 =< 6,
     assertz(pont_v([Ax,Ay],[Ax,Ay2])).
-
 tourner_pont(X1, Y1, X2, Y1, Ax, Ay, down) :-
     Xmin is min(X1,X2), Xmax is max(X1,X2),
     retract(pont_h([Xmin,Y1],[Xmax,Y1])),
     Ay2 is Ay - 1,
     Ay2 >= 1,
     assertz(pont_v([Ax,Ay2],[Ax,Ay])).
-
-% Tourner un pont V (X1=X2) sur l'axe (Ax,Ay)
-% sens = right (nouveau pont H vers la droite) ou left (vers la gauche)
-
 tourner_pont(X1, Y1, X1, Y2, Ax, Ay, right) :-
     Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
     retract(pont_v([X1,Ymin],[X1,Ymax])),
     Ax2 is Ax + 1,
     Ax2 =< 6,
     assertz(pont_h([Ax,Ay],[Ax2,Ay])).
-
 tourner_pont(X1, Y1, X1, Y2, Ax, Ay, left) :-
     Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
     retract(pont_v([X1,Ymin],[X1,Ymax])),
@@ -503,4 +377,150 @@ tourner_pont(X1, Y1, X1, Y2, Ax, Ay, left) :-
     Ax2 >= 1,
     assertz(pont_h([Ax2,Ay],[Ax,Ay])).
 
+
+/* --------------------------------------------------------------------- */
+/*                        FONCTIONS POUR L'IA                            */
+/* --------------------------------------------------------------------- */
+
+capturer_etat(etat(L1, L2, L3, L4, PH, PV)) :-
+    postionLutinJoueur1(L1),
+    postionLutinJoueur2(L2),
+    postionLutinJoueur3(L3),
+    postionLutinJoueur4(L4),
+    tous_ponts_h(PH),
+    tous_ponts_v(PV).
+
+lutins_joueur(1, etat(L,_,_,_,_,_), L).
+lutins_joueur(2, etat(_,L,_,_,_,_), L).
+lutins_joueur(3, etat(_,_,L,_,_,_), L).
+lutins_joueur(4, etat(_,_,_,L,_,_), L).
+
+% versions pures pour manipuler l'état sans effet de bord
+retirer_pont_ia(etat(L1,L2,L3,L4,PH,PV), X1, Y1, X2, Y2, etat(L1,L2,L3,L4,PH_f,PV)) :-
+    Y1 =:= Y2,
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    delete(PH, [[Xmin,Y1],[Xmax,Y1]], PH_f).
+retirer_pont_ia(etat(L1,L2,L3,L4,PH,PV), X1, Y1, X2, Y2, etat(L1,L2,L3,L4,PH,PV_f)) :-
+    X1 =:= X2,
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f).
+
+tourner_pont_ia(etat(L1,L2,L3,L4,PH,PV), X1, Y1, X2, Y1, Ax, Ay, up, etat(L1,L2,L3,L4,PH_f,PV_f)) :-
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    delete(PH, [[Xmin,Y1],[Xmax,Y1]], PH_f),
+    Ay2 is Ay + 1, Ay2 =< 6,
+    append(PV, [[[Ax,Ay],[Ax,Ay2]]], PV_f).
+tourner_pont_ia(etat(L1,L2,L3,L4,PH,PV), X1, Y1, X2, Y1, Ax, Ay, down, etat(L1,L2,L3,L4,PH_f,PV_f)) :-
+    Xmin is min(X1,X2), Xmax is max(X1,X2),
+    delete(PH, [[Xmin,Y1],[Xmax,Y1]], PH_f),
+    Ay2 is Ay - 1, Ay2 >= 1,
+    append(PV, [[[Ax,Ay2],[Ax,Ay]]], PV_f).
+tourner_pont_ia(etat(L1,L2,L3,L4,PH,PV), X1, Y1, X1, Y2, Ax, Ay, right, etat(L1,L2,L3,L4,PH_f,PV_f)) :-
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f),
+    Ax2 is Ax + 1, Ax2 =< 6,
+    append(PH, [[[Ax,Ay],[Ax2,Ay]]], PH_f).
+tourner_pont_ia(etat(L1,L2,L3,L4,PH,PV), X1, Y1, X1, Y2, Ax, Ay, left, etat(L1,L2,L3,L4,PH_f,PV_f)) :-
+    Ymin is min(Y1,Y2), Ymax is max(Y1,Y2),
+    delete(PV, [[X1,Ymin],[X1,Ymax]], PV_f),
+    Ax2 is Ax - 1, Ax2 >= 1,
+    append(PH, [[[Ax,Ay],[Ax2,Ay]]], PH_f).
+
+% comparaison avec -inf
+inf_gt(+inf, X) :- X \= +inf, !.
+inf_gt(X, -inf) :- X \= -inf, !.
+inf_gt(A, B)    :- number(A), number(B), A > B.
+
+% ponts adjacents dans un état pur
+pont_adjacent_etat(etat(_,_,_,_,PH,_), X, Y, right, X2, Y) :-
+    X2 is X+1, X2 =< 6,
+    Xmin is min(X,X2), Xmax is max(X,X2),
+    member([[Xmin,Y],[Xmax,Y]], PH).
+pont_adjacent_etat(etat(_,_,_,_,PH,_), X, Y, left, X2, Y) :-
+    X2 is X-1, X2 >= 1,
+    Xmin is min(X,X2), Xmax is max(X,X2),
+    member([[Xmin,Y],[Xmax,Y]], PH).
+pont_adjacent_etat(etat(_,_,_,_,_,PV), X, Y, up, X, Y2) :-
+    Y2 is Y+1, Y2 =< 6,
+    Ymin is min(Y,Y2), Ymax is max(Y,Y2),
+    member([[X,Ymin],[X,Ymax]], PV).
+pont_adjacent_etat(etat(_,_,_,_,_,PV), X, Y, down, X, Y2) :-
+    Y2 is Y-1, Y2 >= 1,
+    Ymin is min(Y,Y2), Ymax is max(Y,Y2),
+    member([[X,Ymin],[X,Ymax]], PV).
+
+% score simplifié : somme des ponts adjacents de chaque lutin du joueur
+% CORRECTION : Etat passé directement, pas de terme anonyme dans findall
+nb_ponts_etat(Etat, [X,Y], N) :-
+    findall(Dir, pont_adjacent_etat(Etat, X, Y, Dir, _, _), Dirs),
+    length(Dirs, N).
+
+get_value(Etat, Joueur, Score) :-
+    lutins_joueur(Joueur, Etat, Lutins),
+    findall(N, (member([X,Y], Lutins), nb_ponts_etat(Etat, [X,Y], N)), Ns),
+    sumlist(Ns, Score).
+
+% génère toutes les actions possibles sur un pont traversé
+% deux findall séparés pour éviter le ';' dans Tau-Prolog
+actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
+    Y1 =:= Y2, !,
+    findall(retirer(X1,Y1,X2,Y2), true, ARet),
+    findall(tourner(X1,Y1,X2,Y2,Ax,Ay,Sens),
+        ( member(Ax-Ay, [X1-Y1, X2-Y2]),
+          member(Sens, [up, down]),
+          Ay2 is (Sens = up -> Ay + 1 ; Ay - 1),
+          Ay2 >= 1, Ay2 =< 6
+        ), ATour),
+    append(ARet, ATour, Actions).
+
+actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
+    X1 =:= X2, !,
+    findall(retirer(X1,Y1,X2,Y2), true, ARet),
+    findall(tourner(X1,Y1,X2,Y2,Ax,Ay,Sens),
+        ( member(Ax-Ay, [X1-Y1, X2-Y2]),
+          member(Sens, [right, left]),
+          Ax2 is (Sens = right -> Ax + 1 ; Ax - 1),
+          Ax2 >= 1, Ax2 =< 6
+        ), ATour),
+    append(ARet, ATour, Actions).
+
+% applique une action sur un pont dans un état pur
+appliquer_action_pont(Etat, retirer(X1,Y1,X2,Y2), EtatFinal) :-
+    retirer_pont_ia(Etat, X1, Y1, X2, Y2, EtatFinal).
+appliquer_action_pont(Etat, tourner(X1,Y1,X2,Y2,Ax,Ay,Sens), EtatFinal) :-
+    tourner_pont_ia(Etat, X1, Y1, X2, Y2, Ax, Ay, Sens, EtatFinal).
+
+% évalue toutes les actions et retourne la meilleure
+evaluer_actions_pont(_, _, [], MeilleureAction, _, EtatMeilleur, MeilleureAction, EtatMeilleur) :- !.
+evaluer_actions_pont(Etat, Joueur, [Act|Reste], MeilleureAcc, ValAcc, EtatMeilleur, MeilleureAction, EtatFinal) :-
+    ( appliquer_action_pont(Etat, Act, EtatApres) ->
+        get_value(EtatApres, Joueur, Val),
+        ( inf_gt(Val, ValAcc) ->
+            NouvelAcc      = Act,
+            NouvelVal      = Val,
+            NouvelEtatMeil = EtatApres
+        ;
+            NouvelAcc      = MeilleureAcc,
+            NouvelVal      = ValAcc,
+            NouvelEtatMeil = EtatMeilleur
+        )
+    ;
+        % action impossible (hors plateau) — on ignore
+        NouvelAcc      = MeilleureAcc,
+        NouvelVal      = ValAcc,
+        NouvelEtatMeil = EtatMeilleur
+    ),
+    evaluer_actions_pont(Etat, Joueur, Reste, NouvelAcc, NouvelVal, NouvelEtatMeil, MeilleureAction, EtatFinal).
+
+% point d'entrée : choisit la meilleure action sur un pont
+meilleure_action_pont(Etat, Joueur, Pont, MeilleureAction, EtatFinal) :-
+    actions_pont(Etat, Pont, Actions),
+    Actions \= [],
+    evaluer_actions_pont(Etat, Joueur, Actions, none, -inf, Etat, MeilleureAction, EtatFinal).
+
+% traite tous les ponts traversés en chaîne
+gerer_ponts_IA(_, [], Etat, Etat).
+gerer_ponts_IA(Joueur, [Pont|Reste], EtatCourant, EtatFinal) :-
+    meilleure_action_pont(EtatCourant, Joueur, Pont, _Action, EtatApres),
+    gerer_ponts_IA(Joueur, Reste, EtatApres, EtatFinal).
 `

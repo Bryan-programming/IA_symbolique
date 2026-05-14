@@ -146,8 +146,6 @@ const question_parse = `lire_question([${ascii_list_of_question}],LMots),
                                   produire_reponse(LMots,L_reponse),
                                         transformer_reponse_en_string(L_reponse,Message).`;
   addUserMessage(question);
-  // c'est ici que  j'envoi la requette à le session prolog 
-  // runQuery est une methode de la class PrologSession que j'ai ajouté à ceux qui existait pour pouvoir faciler l'affichage de la reponse à l'ecran
   plSession.runQuery(question_parse);
 });
 
@@ -161,10 +159,11 @@ noteVocale.addEventListener('click',()=>{
 //  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog----------------------------------- \\
 
 
-let turn = 'vert';//pour la gestion des  tours
+let turn = 'vert'; // pour la gestion des tours
 
-
-// le nom de la session prolog utilisé ici est <<plSession>> c'est lui qu'il faut utliser pour utiliser les methodes de la classe PrologSession
+// adapte selon quels joueurs sont gérés par l'IA
+// ex: { rouge: 2 } signifie que le joueur 2 (rouge) est l'IA
+const iaConfig = { rouge: 2 };
 
 // Génère un identifiant unique normalisé pour un pont (coordonnées minimales en premier)
 function pontId(x1, y1, x2, y2) {
@@ -208,7 +207,6 @@ function print_board() {
         const table = document.createElement('table');
         let row, rowPontV;
 
-        // Grouper par Y et trier de 6 à 1 pour que Y=6 soit en haut visuellement
         const lignes = {};
         cases.forEach(([x, y]) => {
             if (!lignes[y]) lignes[y] = [];
@@ -220,14 +218,12 @@ function print_board() {
             if (y !== 1) rowPontV = document.createElement("tr");
 
             lignes[y].sort((a, b) => a - b).forEach(x => {
-                // case
                 const td = document.createElement("td");
                 td.classList.add("case");
                 td.dataset.x = x;
                 td.dataset.y = y;
                 row.appendChild(td);
 
-                // pont H
                 if (x !== limit) {
                     const tdPontH = document.createElement("td");
                     tdPontH.classList.add("pont-h");
@@ -236,7 +232,6 @@ function print_board() {
                     row.appendChild(tdPontH);
                 }
 
-                // pont V (entre y-1 et y, donc data-y = y-1)
                 if (y !== 1) {
                     const tdPontV = document.createElement("td");
                     tdPontV.classList.add("pont-v");
@@ -259,10 +254,10 @@ function print_board() {
 }
 
 function placerLutin(x, y, couleur) {
-    const cas = document.querySelector(`.case[data-x="${x}"][data-y="${y}"]`);//recuperer la case par son id 
-    const lutin = document.createElement('div');//creer un div enfant 
-    lutin.classList.add('lutin', couleur);//lui donner une classe pour le styliser dans le css 
-    cas.appendChild(lutin);//ajout du div cree a la case parente
+    const cas = document.querySelector(`.case[data-x="${x}"][data-y="${y}"]`);
+    const lutin = document.createElement('div');
+    lutin.classList.add('lutin', couleur);
+    cas.appendChild(lutin);
 }
 
 function placerPonth(x1, y1, x2, y2) {
@@ -275,7 +270,7 @@ function placerPonth(x1, y1, x2, y2) {
 
     const pont_h = document.createElement('div');
     pont_h.classList.add('pont-hadded');
-    pont_h.dataset.pont = pontId(x1, y1, x2, y2); // identifiant unique
+    pont_h.dataset.pont = pontId(x1, y1, x2, y2);
     cas.appendChild(pont_h);
 }
 
@@ -289,7 +284,7 @@ function placerPontV(x1, y1, x2, y2) {
 
     const pont_v = document.createElement('div');
     pont_v.classList.add('pont-vadded');
-    pont_v.dataset.pont = pontId(x1, y1, x2, y2); // identifiant unique
+    pont_v.dataset.pont = pontId(x1, y1, x2, y2);
     cas.appendChild(pont_v);
 }
 
@@ -299,9 +294,6 @@ function refresh_joueurs() {
     move_luttin();
 }
 
-/*
-    place the 4 players on the board using the function placerLutin
-*/
 function placer_les_joueurs(){
 
     let player1_luttins;
@@ -309,7 +301,6 @@ function placer_les_joueurs(){
     let player3_luttins;
     let player4_luttins;
 
-     // Joueur 1 vert
     plSession.session.query("postionLutinJoueur1(L).");
     plSession.session.answer(rep => {
         if (rep && rep !== false) player1_luttins = fromList(rep.lookup("L"));
@@ -318,7 +309,6 @@ function placer_les_joueurs(){
         placerLutin(x, y, 'vert');
     });
 
-    // Joueur 2 rouge
     plSession.session.query("postionLutinJoueur2(L).");
     plSession.session.answer(rep => {
         if (rep && rep !== false) player2_luttins = fromList(rep.lookup("L"));
@@ -327,7 +317,6 @@ function placer_les_joueurs(){
         placerLutin(x, y, 'rouge');
     });
 
-    // Joueur 3  bleu
     plSession.session.query("postionLutinJoueur3(L).");
     plSession.session.answer(rep => {
         if (rep && rep !== false) player3_luttins = fromList(rep.lookup("L"));
@@ -336,7 +325,6 @@ function placer_les_joueurs(){
         placerLutin(x, y, 'bleu');
     });
 
-    // Joueur 4  jaune
     plSession.session.query("postionLutinJoueur4(L).");
     plSession.session.answer(rep => {
         if (rep && rep !== false) player4_luttins = fromList(rep.lookup("L"));
@@ -346,11 +334,6 @@ function placer_les_joueurs(){
     });
 }
 
-
-/*
-   i copied this function from stackoverflow
-   spec : transforme a prolog liste_of_liste to a javascript aray of arrays
-*/
 function fromList(xs) {
     var arr = [];
     while (pl.type.is_term(xs) && xs.indicator === "./2") {
@@ -377,7 +360,6 @@ function placer_les_ponts() {
     plSession.session.query("init_ponts_h, init_ponts_v.");
     plSession.session.answer(_ => {});
 
-    // ponts horizontales
     plSession.session.query("tous_ponts_h(L).");
     plSession.session.answer(rep => {
         const ponts = fromList(rep.lookup("L"));
@@ -386,7 +368,6 @@ function placer_les_ponts() {
         });
     });
 
-    // ponts verticales
     plSession.session.query("tous_ponts_v(L).");
     plSession.session.answer(rep => {
         const ponts = fromList(rep.lookup("L"));
@@ -397,9 +378,8 @@ function placer_les_ponts() {
 }
 
 
-//fonction concernants les deplacements des ponts -------------------------------------------------------------------------------------------------------------------------------
+// ---- GESTION DES PONTS (humain) -------------------------------------------------------------
 
-// Supprime un pont du DOM via son identifiant normalisé
 function supprimerPontDOM(x1, y1, x2, y2) {
     const id = pontId(x1, y1, x2, y2);
     const pont = document.querySelector(`[data-pont="${id}"]`);
@@ -407,12 +387,10 @@ function supprimerPontDOM(x1, y1, x2, y2) {
     else console.warn("Pont DOM introuvable pour id:", id);
 }
 
-// Met à jour le DOM après une rotation de pont
 function tournerPontDOM(x1, y1, x2, y2, ax, ay, sens) {
     supprimerPontDOM(x1, y1, x2, y2);
 
     if (y1 === y2) {
-        // était H → devient V
         let vyMin = sens === "up" ? ay : ay - 1;
         let vyMax = sens === "up" ? ay + 1 : ay;
         const casV = document.querySelector(`.pont-v[data-x="${ax}"][data-y="${vyMin}"]`);
@@ -425,7 +403,6 @@ function tournerPontDOM(x1, y1, x2, y2, ax, ay, sens) {
             console.warn(`pont-v cible introuvable: (${ax},${vyMin})`);
         }
     } else {
-        // était V → devient H
         let hxMin = sens === "right" ? ax : ax - 1;
         let hxMax = sens === "right" ? ax + 1 : ax;
         const casH = document.querySelector(`.pont-h[data-x="${hxMin}"][data-y="${ay}"]`);
@@ -440,7 +417,6 @@ function tournerPontDOM(x1, y1, x2, y2, ax, ay, sens) {
     }
 }
 
-// Vérifie si le panneau est vide et réaffiche les flèches si c'est le cas
 function verifierPanneauVide(panel) {
     const pontsRestants = panel.querySelectorAll('strong');
     if (pontsRestants.length === 0) {
@@ -448,7 +424,6 @@ function verifierPanneauVide(panel) {
     }
 }
 
-// Affiche le panneau d'actions pour chaque pont traversé
 function proposer_actions_ponts(ponts) {
     const panel = document.getElementById("arrow-panel");
     panel.innerHTML = "<p style='color:white;margin:4px 0;font-size:14px'>Ponts traversés :</p>";
@@ -465,7 +440,6 @@ function proposer_actions_ponts(ponts) {
         div.style.paddingBottom = "8px";
         div.innerHTML = `<strong>(${x1},${y1})→(${x2},${y2})</strong><br>`;
 
-        // Bouton retirer
         const btnRetirer = document.createElement("button");
         btnRetirer.textContent = "Retirer";
         btnRetirer.style.margin = "2px";
@@ -479,7 +453,6 @@ function proposer_actions_ponts(ponts) {
         });
         div.appendChild(btnRetirer);
 
-        // 4 boutons de rotation selon orientation du pont
         const rotations = estHorizontal ? [
             { ax: x1, ay: y1, sens: "up",   label: `↑ axe (${x1},${y1})` },
             { ax: x1, ay: y1, sens: "down",  label: `↓ axe (${x1},${y1})` },
@@ -520,11 +493,135 @@ function proposer_actions_ponts(ponts) {
 }
 
 
-//fonction concernants les deplacements des lutins -------------------------------------------------------------------------------------------------------------------------------
+// ---- GESTION DES PONTS (IA) -----------------------------------------------------------------
 
+/**
+ * Lit un argument d'un terme Prolog : retourne .id pour les atomes, .value pour les nombres.
+ */
+function termArg(arg) {
+    if (arg.value !== undefined) return arg.value; // nombre
+    return arg.id;                                  // atome (up, down, left, right...)
+}
+
+/**
+ * Applique visuellement ET en Prolog l'action choisie par l'IA sur un pont.
+ * action = terme Prolog retirer(X1,Y1,X2,Y2) ou tourner(X1,Y1,X2,Y2,Ax,Ay,Sens)
+ */
+function appliquer_action_pont_DOM(action) {
+    const nom = action.id; // "retirer" ou "tourner"
+
+    if (nom === "retirer") {
+        const x1 = termArg(action.args[0]);
+        const y1 = termArg(action.args[1]);
+        const x2 = termArg(action.args[2]);
+        const y2 = termArg(action.args[3]);
+        plSession.session.query(`retirer_pont(${x1},${y1},${x2},${y2}).`);
+        plSession.session.answer(_ => {});
+        supprimerPontDOM(x1, y1, x2, y2);
+
+    } else if (nom === "tourner") {
+        const x1   = termArg(action.args[0]);
+        const y1   = termArg(action.args[1]);
+        const x2   = termArg(action.args[2]);
+        const y2   = termArg(action.args[3]);
+        const ax   = termArg(action.args[4]);
+        const ay   = termArg(action.args[5]);
+        const sens = termArg(action.args[6]); // atome : up/down/left/right
+        plSession.session.query(
+            `tourner_pont(${x1},${y1},${x2},${y2},${ax},${ay},${sens}).`
+        );
+        plSession.session.answer(_ => {});
+        tournerPontDOM(x1, y1, x2, y2, ax, ay, sens);
+    }
+}
+
+/**
+ * Pour chaque pont traversé par l'IA, demande à Prolog la meilleure action
+ * (retirer ou tourner) via meilleure_action_pont et l'applique visuellement.
+ * CORRECTION : signature Prolog gerer_ponts_IA(Joueur, Ponts, Etat, EtatFinal)
+ *              — pas de paramètre Profondeur.
+ */
+function gerer_ponts_IA(joueur, ponts) {
+    if (!ponts || ponts.length === 0) return;
+
+    ponts.forEach(([x1, y1, x2, y2]) => {
+        // Pour chaque pont, on demande directement la meilleure action à Prolog
+        plSession.session.query(`
+            capturer_etat(Etat),
+            meilleure_action_pont(Etat, ${joueur}, pont(${x1},${y1},${x2},${y2}), Action, _).
+        `);
+        plSession.session.answer(rep => {
+            if (rep && rep !== false) {
+                const action = rep.lookup("Action");
+                appliquer_action_pont_DOM(action);
+            } else {
+                // fallback : retirer si Prolog échoue
+                console.warn(`meilleure_action_pont a échoué pour pont(${x1},${y1},${x2},${y2}), on retire`);
+                plSession.session.query(`retirer_pont(${x1},${y1},${x2},${y2}).`);
+                plSession.session.answer(_ => {});
+                supprimerPontDOM(x1, y1, x2, y2);
+            }
+        });
+    });
+}
+
+
+// ---- IA -------------------------------------------------------------------------------------
+
+/**
+ * Demande à Prolog le meilleur coup pour le joueur IA via MinMax,
+ * l'applique en Prolog et met à jour le DOM.
+ */
+function jouer_IA(numJoueur) {
+    plSession.session.query(`
+        capturer_etat(Etat),
+        get_IA_choice(Etat, 2, ${numJoueur}, Mvt).
+    `);
+    plSession.session.answer(rep => {
+        if (!rep || rep === false) {
+            console.warn("L'IA n'a pas trouvé de mouvement.");
+            return;
+        }
+        const mvt = rep.lookup("Mvt");
+        const xs  = termArg(mvt.args[1]);
+        const ys  = termArg(mvt.args[2]);
+        const dir = termArg(mvt.args[3]); // atome : up/down/left/right
+
+        appliquer_coup_IA(numJoueur, xs, ys, dir);
+    });
+}
+
+/**
+ * Applique le coup de l'IA en Prolog, rafraîchit le DOM,
+ * puis gère les ponts traversés (retrait ou rotation optimale).
+ */
+function appliquer_coup_IA(joueur, xs, ys, dir) {
+    plSession.session.query(
+        `deplacement(${joueur}, ${xs}, ${ys}, ${dir}, Xf, Yf, Ponts).`
+    );
+    plSession.session.answer(rep => {
+        if (!rep || rep === false) return;
+
+        const pontsRaw = rep.lookup("Ponts");
+        const pontsArr = fromList(pontsRaw);
+        const ponts    = pontsArr ? pontsArr.map(fromPontTerm) : [];
+
+        refresh_joueurs();
+        next_player();
+
+        // L'IA choisit la meilleure action pour chaque pont traversé
+        if (ponts.length > 0) {
+            gerer_ponts_IA(joueur, ponts);
+        }
+    });
+}
+
+// ---- FIN IA ---------------------------------------------------------------------------------
+
+
+// ---- DÉPLACEMENTS DES LUTINS (humain) -------------------------------------------------------
 
 function showArrows() {
-
     const panel = document.getElementById("arrow-panel");
     panel.innerHTML = "";
 
@@ -541,27 +638,22 @@ function activatearrows(lutin){
          let numJoueur;
          const color  = lutin.classList[1] ;
 
-         //ici je recupere la couleur du lutin pour decdier le numero du joueur
          if( color==="vert")numJoueur=1;
          else if ( color==="rouge")numJoueur=2;
          else if ( color==="bleu")numJoueur=3;
          else numJoueur=4;
 
-         // ici je recupere les corddonees de la case source du lutin qu'on veut deplacer
          const xs = lutin.parentElement.dataset.x;
          const ys = lutin.parentElement.dataset.y;
-         console.log("je suis appelet ");
 
          if (color!==turn){
              alert("pas ton tours");
              return;
          }
 
-
          const allarrows = document.querySelectorAll(".arrow");
          allarrows.forEach(arrow=>{
                 arrow.addEventListener("click",function(){
-                      console.log("i was called");
                       const direction = this.classList[1];
                       const query = `deplacement(${numJoueur}, ${xs}, ${ys}, ${direction.toLowerCase()}, Xf, Yf, Ponts).`;
                       plSession.session.query(query);
@@ -570,7 +662,7 @@ function activatearrows(lutin){
                               const pontsRaw = rep.lookup("Ponts");
                               const pontsArr = fromList(pontsRaw);
                               refresh_joueurs();
-                              next_player();// ici on change le tour pour le passer au prichain joueur
+                              next_player();
                               if (pontsArr && pontsArr.length > 0) {
                                   const ponts = pontsArr.map(fromPontTerm);
                                   proposer_actions_ponts(ponts);
@@ -581,22 +673,12 @@ function activatearrows(lutin){
          });
 }
 
-/*
-    je me suis inspirer de cette video : "https://youtu.be/wX0pb6CBS-c" pour pouvoir detecter un "double click" en dehors d'une div
-    cad quand je clique sur un joueur je n'execute le move que si je clique sur la flèche de direction
-
-*/
 function move_luttin(){
     document.querySelectorAll(".lutin").forEach(lutin=>{
         lutin.addEventListener("click", function (event) {
-            // Bloque si des ponts sont encore en attente de traitement
             if (pontsEnAttente()) return;
 
             const caseDiv = event.target.closest(".case");
-            const source = [
-                caseDiv.dataset.x,
-                caseDiv.dataset.y
-            ];
             showArrows();
             activatearrows(lutin);
         });
@@ -628,6 +710,11 @@ function next_player(){
     }
 
     highlight_turn(turn);
+
+    // Déclenche l'IA si c'est son tour
+    if (iaConfig[turn] !== undefined) {
+        setTimeout(() => jouer_IA(iaConfig[turn]), 600);
+    }
 }
 
 

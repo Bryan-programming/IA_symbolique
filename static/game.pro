@@ -520,6 +520,77 @@ peut_bouger_lutin(Etat, X, Y) :-
     \+ occupe_etat(Etat, X2, Y2).
 
 /* --------------------------------------------------------------------- */
+/*                  CHOIX DE L'ACTION SUR UN PONT (IA)                   */
+/* --------------------------------------------------------------------- */
+
+% CORRECTION 1 : deux findall séparés pour éviter le problème du ';' dans Tau-Prolog
+
+% pont horizontal
+actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
+    Y1 =:= Y2, !,
+    findall(retirer(X1,Y1,X2,Y2), true, ARet),
+    findall(tourner(X1,Y1,X2,Y2,Ax,Ay,Sens),
+        ( member(Ax-Ay, [X1-Y1, X2-Y2]),
+          member(Sens, [up, down]),
+          Ay2 is (Sens = up -> Ay + 1 ; Ay - 1),
+          Ay2 >= 1, Ay2 =< 6
+        ), ATour),
+    append(ARet, ATour, Actions).
+
+% pont vertical
+actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
+    X1 =:= X2, !,
+    findall(retirer(X1,Y1,X2,Y2), true, ARet),
+    findall(tourner(X1,Y1,X2,Y2,Ax,Ay,Sens),
+        ( member(Ax-Ay, [X1-Y1, X2-Y2]),
+          member(Sens, [right, left]),
+          Ax2 is (Sens = right -> Ax + 1 ; Ax - 1),
+          Ax2 >= 1, Ax2 =< 6
+        ), ATour),
+    append(ARet, ATour, Actions).
+
+% applique une action sur un pont dans un état pur
+appliquer_action_pont(Etat, retirer(X1,Y1,X2,Y2), EtatFinal) :-
+    retirer_pont_ia(Etat, X1, Y1, X2, Y2, EtatFinal).
+
+appliquer_action_pont(Etat, tourner(X1,Y1,X2,Y2,Ax,Ay,Sens), EtatFinal) :-
+    tourner_pont_ia(Etat, X1, Y1, X2, Y2, Ax, Ay, Sens, EtatFinal).
+
+% CORRECTION 2 : evaluer_actions_pont avec EtatMeilleur comme accumulateur
+evaluer_actions_pont(_, _, [], MeilleureAction, _, EtatMeilleur, MeilleureAction, EtatMeilleur) :- !.
+evaluer_actions_pont(Etat, Joueur, [Act|Reste], MeilleureAcc, ValAcc, EtatMeilleur, MeilleureAction, EtatFinal) :-
+    ( appliquer_action_pont(Etat, Act, EtatApres) ->
+        get_value(EtatApres, Joueur, Val),
+        ( inf_gt(Val, ValAcc) ->
+            NouvelAcc      = Act,
+            NouvelVal      = Val,
+            NouvelEtatMeil = EtatApres
+        ;
+            NouvelAcc      = MeilleureAcc,
+            NouvelVal      = ValAcc,
+            NouvelEtatMeil = EtatMeilleur
+        )
+    ; % action impossible (hors plateau) — on ignore
+        NouvelAcc      = MeilleureAcc,
+        NouvelVal      = ValAcc,
+        NouvelEtatMeil = EtatMeilleur
+    ),
+    evaluer_actions_pont(Etat, Joueur, Reste, NouvelAcc, NouvelVal, NouvelEtatMeil, MeilleureAction, EtatFinal).
+
+% point d'entrée : choisit la meilleure action sur un pont
+% CORRECTION 2 suite : on passe Etat comme EtatMeilleur initial
+meilleure_action_pont(Etat, Joueur, Pont, MeilleureAction, EtatFinal) :-
+    actions_pont(Etat, Pont, Actions),
+    Actions \= [],
+    evaluer_actions_pont(Etat, Joueur, Actions, none, -inf, Etat, MeilleureAction, EtatFinal).
+
+% traite tous les ponts traversés en chaîne (l'état évolue après chaque action)
+gerer_ponts_IA(_, [], Etat, Etat).
+gerer_ponts_IA(Joueur, [Pont|Reste], EtatCourant, EtatFinal) :-
+    meilleure_action_pont(EtatCourant, Joueur, Pont, _MeilleureAction, EtatApres),
+    gerer_ponts_IA(Joueur, Reste, EtatApres, EtatFinal).
+
+/* --------------------------------------------------------------------- */
 /*                     MINMAX AVEC ÉLAGAGE ALPHA-BETA                    */
 /* --------------------------------------------------------------------- */
 
@@ -562,11 +633,8 @@ minMax(Etat, Joueur_IA, JoueurActuel, Profondeur, Alpha, Beta, MeilleurMvt, Vale
               Mouvements, none, +inf, MeilleurMvt, Valeur).
 
 % maximiser : parcourt les mouvements et garde le meilleur pour l'IA
-% cas de base : plus de mouvements
-% cas de base : liste vide
 maximiser(_, _, _, _, _, _, [], MvtAcc, ValAcc, MvtAcc, ValAcc) :- !.
 
-% cas récursif
 maximiser(Etat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta,
           [Mvt|Reste], MvtAcc, ValAcc, MeilleurMvt, Valeur) :-
     ( doit_couper(Alpha, Beta) ->
@@ -588,10 +656,8 @@ maximiser(Etat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta,
                   MeilleurMvt, Valeur)
     ).
 
-% cas de base : liste vide
 minimiser(_, _, _, _, _, _, [], MvtAcc, ValAcc, MvtAcc, ValAcc) :- !.
 
-% cas récursif
 minimiser(Etat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta,
           [Mvt|Reste], MvtAcc, ValAcc, MeilleurMvt, Valeur) :-
     ( doit_couper(Alpha, Beta) ->
@@ -613,18 +679,13 @@ minimiser(Etat, JoueurIA, JoueurSuivant, Profondeur, Alpha, Beta,
                   MeilleurMvt, Valeur)
     ).
 
-% fonction qui supprime tous les ponts de la liste passée en paramètre
-retirer_liste_ponts(Etat, [], Etat).
-retirer_liste_ponts(Etat, [pont(X1,Y1,X2,Y2)|Rest], EtatFinal) :-
-    retirer_pont_ia(Etat, X1, Y1, X2, Y2, EtatIntermediaire),
-    retirer_liste_ponts(EtatIntermediaire, Rest, EtatFinal).
-
-% applique un mouvement et retire tous les ponts traversés
+% CORRECTION 3 : appliquer_mouvement_avec_retrait_ponts utilise gerer_ponts_IA
+% retirer_liste_ponts n'est plus nécessaire et a été supprimée
 appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, EtatFinal) :-
     Mvt = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _),
     calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
     nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, EtatApresDepl),
-    retirer_liste_ponts(EtatApresDepl, Ponts, EtatFinal).
+    gerer_ponts_IA(Joueur, Ponts, EtatApresDepl, EtatFinal).
 
 next_player(1, 2).
 next_player(2, 3).
@@ -632,7 +693,6 @@ next_player(3, 4).
 next_player(4, 1).
 
 /* notes supplémentaires :
-
 
 - La condition d'élimination d'un joueur a été corrigée : un joueur est éliminé uniquement
 si aucun de ses lutins n'a de pont adjacent, et non plus s'il ne peut pas bouger
@@ -644,5 +704,8 @@ heuristiques échouent en fin de partie.
 - Selon l'énoncé le jeu est sensé être joué à 2, 3 ou 4 joueurs mais dans nos fonctions
 on est parti du principe que le jeu est toujours constitué de 4 joueurs.
 On devrait le mentionner dans le rapport.
+
+- L'IA évalue maintenant retirer/tourner chaque pont traversé via gerer_ponts_IA,
+au lieu de toujours retirer (retirer_liste_ponts supprimée).
 
 */
