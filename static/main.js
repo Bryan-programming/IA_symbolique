@@ -473,35 +473,40 @@ function proposer_actions_ponts(ponts) {
         });
         div.appendChild(btnRetirer);
 
-        const rotations = estHorizontal ? [
-            { ax: x1, ay: y1, sens: "up",   label: `↑ axe (${x1},${y1})` },
-            { ax: x1, ay: y1, sens: "down",  label: `↓ axe (${x1},${y1})` },
-            { ax: x2, ay: y2, sens: "up",    label: `↑ axe (${x2},${y2})` },
-            { ax: x2, ay: y2, sens: "down",  label: `↓ axe (${x2},${y2})` },
+        // filtre les rotations hors-plateau avant de créer les boutons
+        const rotationsPossibles = estHorizontal ? [
+            { ax: x1, ay: y1, sens: "up",   label: `↑ axe (${x1},${y1})`, valide: y1 + 1 <= 6 },
+            { ax: x1, ay: y1, sens: "down",  label: `↓ axe (${x1},${y1})`, valide: y1 - 1 >= 1 },
+            { ax: x2, ay: y2, sens: "up",    label: `↑ axe (${x2},${y2})`, valide: y2 + 1 <= 6 },
+            { ax: x2, ay: y2, sens: "down",  label: `↓ axe (${x2},${y2})`, valide: y2 - 1 >= 1 },
         ] : [
-            { ax: x1, ay: y1, sens: "right", label: `→ axe (${x1},${y1})` },
-            { ax: x1, ay: y1, sens: "left",  label: `← axe (${x1},${y1})` },
-            { ax: x2, ay: y2, sens: "right", label: `→ axe (${x2},${y2})` },
-            { ax: x2, ay: y2, sens: "left",  label: `← axe (${x2},${y2})` },
+            { ax: x1, ay: y1, sens: "right", label: `→ axe (${x1},${y1})`, valide: x1 + 1 <= 6 },
+            { ax: x1, ay: y1, sens: "left",  label: `← axe (${x1},${y1})`, valide: x1 - 1 >= 1 },
+            { ax: x2, ay: y2, sens: "right", label: `→ axe (${x2},${y2})`, valide: x2 + 1 <= 6 },
+            { ax: x2, ay: y2, sens: "left",  label: `← axe (${x2},${y2})`, valide: x2 - 1 >= 1 },
         ];
 
-        rotations.forEach(({ ax, ay, sens, label }) => {
+        rotationsPossibles.filter(r => r.valide).forEach(({ ax, ay, sens, label }) => {
             const lax = ax, lay = ay, lsens = sens;
             const btn = document.createElement("button");
             btn.textContent = label;
             btn.style.margin = "2px";
             btn.style.fontSize = "11px";
-            btn.addEventListener("click", () => {
+            btn.addEventListener("click", (event) => {
+                const boutonClique = event.currentTarget;
                 const query = `tourner_pont(${x1}, ${y1}, ${x2}, ${y2}, ${lax}, ${lay}, ${lsens}).`;
+                console.log("Requête Prolog envoyée :", query);
                 plSession.session.query(query);
                 plSession.session.answer(rep => {
+                    console.log("Réponse Prolog :", rep);
                     if (rep && rep !== false) {
                         tournerPontDOM(x1, y1, x2, y2, lax, lay, lsens);
                         div.remove();
                         verifierPanneauVide(panel);
                     } else {
-                        btn.style.opacity = "0.3";
-                        btn.disabled = true;
+                        boutonClique.style.opacity = "0.5";
+                        boutonClique.style.backgroundColor = "#777";
+                        boutonClique.disabled = true;
                     }
                 });
             });
@@ -594,6 +599,8 @@ function jouer_IA(numJoueur) {
                     appliquer_coup_IA(numJoueur, xs, ys, dir);
                 } else {
                     console.warn("IA : aucun mouvement possible pour joueur", numJoueur);
+                    next_player();
+
                 }
             });
         }
@@ -692,6 +699,10 @@ function highlight_turn(color) {
 }
 
 function next_player() {
+    // Éliminer les lutins sans aucun pont avant de passer au joueur suivant
+    plSession.session.query("eliminer_tous_lutins_bloques.");
+    plSession.session.answer(_ => { refresh_joueurs(); });
+
     if (turn === 'vert')       turn = 'bleu';
     else if (turn === 'bleu')  turn = 'jaune';
     else if (turn === 'jaune') turn = 'rouge';
@@ -700,7 +711,7 @@ function next_player() {
     highlight_turn(turn);
 
     if (iaConfig[turn] !== undefined) {
-        setTimeout(() => jouer_IA(iaConfig[turn]), 600);
+        setTimeout(() => jouer_IA(iaConfig[turn]), 1500);
     }
 }
 

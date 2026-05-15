@@ -431,6 +431,32 @@ a_un_pont_joueur(Etat, Lutins) :-
 % Un joueur est éliminé si TOUS ses lutins n'ont aucun pont adjacent
 joueur_bloque(Lutins, Etat) :- \+ a_un_pont_joueur(Etat, Lutins).
 
+% Met à jour la liste de lutins d'un joueur dans la base de connaissance
+mettre_a_jour_joueur(1, NouvelleL) :-
+    retract(postionLutinJoueur1(_)), assertz(postionLutinJoueur1(NouvelleL)).
+mettre_a_jour_joueur(2, NouvelleL) :-
+    retract(postionLutinJoueur2(_)), assertz(postionLutinJoueur2(NouvelleL)).
+mettre_a_jour_joueur(3, NouvelleL) :-
+    retract(postionLutinJoueur3(_)), assertz(postionLutinJoueur3(NouvelleL)).
+mettre_a_jour_joueur(4, NouvelleL) :-
+    retract(postionLutinJoueur4(_)), assertz(postionLutinJoueur4(NouvelleL)).
+
+% Élimine les lutins individuels sans aucun pont adjacent
+eliminer_lutins_bloques(Joueur) :-
+    capturer_etat(Etat),
+    lutins_joueur(Joueur, Etat, Lutins),
+    findall([X,Y], (member([X,Y], Lutins), a_un_pont(Etat, [X,Y])), LutinsRestants),
+    ( LutinsRestants = Lutins -> true
+    ; mettre_a_jour_joueur(Joueur, LutinsRestants)
+    ).
+
+% Élimine pour tous les joueurs
+eliminer_tous_lutins_bloques :-
+    eliminer_lutins_bloques(1),
+    eliminer_lutins_bloques(2),
+    eliminer_lutins_bloques(3),
+    eliminer_lutins_bloques(4).
+
 % Un joueur peut bouger si au moins un lutin peut atteindre une case différente
 peut_bouger_un_lutin(Etat, Lutins) :-
     member([Xs,Ys], Lutins),
