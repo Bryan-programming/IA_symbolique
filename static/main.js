@@ -1,9 +1,16 @@
 /* From https://www.youtube.com/watch?v=-k-PgvbktX4
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
+let phase = "placement";
 
-// fonctions pour gérer l'interface de chat
+const nbLutinsParJoueur = 6;
 
+const lutinsPlaces = {
+    vert: 0,
+    rouge: 0,
+    bleu: 0,
+    jaune: 0
+};
 function addUserMessage(text) {
     document.querySelector('.output').innerHTML += `
         <div class="message user">
@@ -40,18 +47,14 @@ function annonceOut() {
 
 function toArray(str) {
     const array = [];
-    for (let i = 0; i < str.length; ++i) {
-        array.push(str.charCodeAt(i));
-    }
+    for (let i = 0; i < str.length; ++i) array.push(str.charCodeAt(i));
     array.push(10);
     return array;
 }
 
 function fromArrayCodeToString(arr) {
     var res = [];
-    for (var i = 0; i < arr.length; i++) {
-        res.push(String.fromCharCode(arr[i]));
-    }
+    for (var i = 0; i < arr.length; i++) res.push(String.fromCharCode(arr[i]));
     return res.join("");
 }
 
@@ -82,9 +85,7 @@ const plSession = new PrologSession();
 var question = '';
 var response = '';
 var realresponse = '';
-
 var msg;
-
 let p = document.createElement("p");
 
 recognition.addEventListener("result", (e) => {
@@ -92,12 +93,9 @@ recognition.addEventListener("result", (e) => {
         .map((result) => result[0])
         .map((result) => result.transcript)
         .join("");
-
     console.log(text);
     if (e.results[0].isFinal) {
         addUserMessage(text);
-        console.log("text prefix");
-        console.log(text.slice(0, 20));
         ascii_list_of_question = toArray(text.toLowerCase());
         const question_parse = `lire_question([${ascii_list_of_question}],LMots),
                                   produire_reponse(LMots,L_reponse),
@@ -129,12 +127,10 @@ button.addEventListener('click', () => {
 });
 
 const noteVocale = document.getElementById("chat-voice");
-noteVocale.addEventListener('click', () => {
-    recognition.start();
-});
+noteVocale.addEventListener('click', () => { recognition.start(); });
 
 
-//  ---------------------------- Espace pour les fonctions graphiques utilisant Tau-prolog \\
+//  ---------------------------- Fonctions graphiques Tau-prolog \\
 
 let turn = 'vert';
 
@@ -143,13 +139,9 @@ const iaConfig = { rouge: 2, bleu: 3 };
 
 function pontId(x1, y1, x2, y2) {
     if (y1 === y2) {
-        const xmin = Math.min(x1, x2);
-        const xmax = Math.max(x1, x2);
-        return `h-${xmin}-${y1}-${xmax}-${y1}`;
+        return `h-${Math.min(x1,x2)}-${y1}-${Math.max(x1,x2)}-${y1}`;
     } else {
-        const ymin = Math.min(y1, y2);
-        const ymax = Math.max(y1, y2);
-        return `v-${x1}-${ymin}-${x1}-${ymax}`;
+        return `v-${x1}-${Math.min(y1,y2)}-${x1}-${Math.max(y1,y2)}`;
     }
 }
 
@@ -220,7 +212,108 @@ function print_board() {
         plateau.appendChild(table);
     });
 }
+function activerPlacement() {
+    document.querySelectorAll(".case").forEach(c => {
+        c.addEventListener("click", function () {
 
+            if (phase !== "placement") return;
+
+            if (iaConfig[turn] !== undefined) return;
+
+            const x = this.dataset.x;
+            const y = this.dataset.y;
+
+            let joueurNum;
+            if (turn === "vert") joueurNum = 1;
+            else if (turn === "rouge") joueurNum = 2;
+            else if (turn === "bleu") joueurNum = 3;
+            else joueurNum = 4;
+
+            plSession.session.query(`
+                placer_lutin_joueur(${joueurNum}, ${x}, ${y}).
+            `);
+
+            plSession.session.answer(rep => {
+                if (rep && rep !== false) {
+
+                    lutinsPlaces[turn]++;
+
+                    refresh_joueurs();
+
+                    next_player_placement();
+                    verifier_fin_placement();
+                }
+            });
+        });
+    });
+}
+
+function next_player_placement() {
+    if (turn === 'vert')       turn = 'bleu';
+    else if (turn === 'bleu')  turn = 'jaune';
+    else if (turn === 'jaune') turn = 'rouge';
+    else                       turn = 'vert';
+
+    highlight_turn(turn);
+
+    // IA joue automatiquement
+    if (iaConfig[turn] !== undefined) {
+        setTimeout(() => placement_IA(iaConfig[turn]), 400);
+    }
+}
+
+function placement_IA(joueur) {
+    plSession.session.query(`
+        choisir_placement_ia(${joueur}, X, Y).
+    `);
+
+    plSession.session.answer(rep => {
+        if (rep && rep !== false) {
+
+            const x = termArg(rep.lookup("X"));
+            const y = termArg(rep.lookup("Y"));
+
+            plSession.session.query(`
+                placer_lutin_joueur(${joueur}, ${x}, ${y}).
+            `);
+
+            plSession.session.answer(_ => {
+
+                const couleur =
+                    joueur === 1 ? "vert" :
+                    joueur === 2 ? "rouge" :
+                    joueur === 3 ? "bleu" : "jaune";
+
+                lutinsPlaces[couleur]++;
+
+                refresh_joueurs();
+
+                next_player_placement();
+                verifier_fin_placement();
+            });
+        }
+    });
+}
+
+function verifier_fin_placement() {
+    const total =
+        lutinsPlaces.vert +
+        lutinsPlaces.rouge +
+        lutinsPlaces.bleu +
+        lutinsPlaces.jaune;
+
+    if (total === nbLutinsParJoueur * 4) {
+
+        console.log("FIN PLACEMENT");
+
+        phase = "jeu";
+
+        document.getElementById("arrow-panel").innerHTML = "";
+
+        move_luttin(); 
+        highlight_turn(turn);
+    }
+}
 function placerLutin(x, y, couleur) {
     const cas = document.querySelector(`.case[data-x="${x}"][data-y="${y}"]`);
     const lutin = document.createElement('div');
@@ -253,23 +346,22 @@ function refresh_joueurs() {
 }
 
 function placer_les_joueurs() {
-    let player1_luttins, player2_luttins, player3_luttins, player4_luttins;
-
+    let p1, p2, p3, p4;
     plSession.session.query("postionLutinJoueur1(L).");
-    plSession.session.answer(rep => { if (rep && rep !== false) player1_luttins = fromList(rep.lookup("L")); });
-    if (player1_luttins) player1_luttins.forEach(([x, y]) => placerLutin(x, y, 'vert'));
+    plSession.session.answer(rep => { if (rep && rep !== false) p1 = fromList(rep.lookup("L")); });
+    if (p1) p1.forEach(([x, y]) => placerLutin(x, y, 'vert'));
 
     plSession.session.query("postionLutinJoueur2(L).");
-    plSession.session.answer(rep => { if (rep && rep !== false) player2_luttins = fromList(rep.lookup("L")); });
-    if (player2_luttins) player2_luttins.forEach(([x, y]) => placerLutin(x, y, 'rouge'));
+    plSession.session.answer(rep => { if (rep && rep !== false) p2 = fromList(rep.lookup("L")); });
+    if (p2) p2.forEach(([x, y]) => placerLutin(x, y, 'rouge'));
 
     plSession.session.query("postionLutinJoueur3(L).");
-    plSession.session.answer(rep => { if (rep && rep !== false) player3_luttins = fromList(rep.lookup("L")); });
-    if (player3_luttins) player3_luttins.forEach(([x, y]) => placerLutin(x, y, 'bleu'));
+    plSession.session.answer(rep => { if (rep && rep !== false) p3 = fromList(rep.lookup("L")); });
+    if (p3) p3.forEach(([x, y]) => placerLutin(x, y, 'bleu'));
 
     plSession.session.query("postionLutinJoueur4(L).");
-    plSession.session.answer(rep => { if (rep && rep !== false) player4_luttins = fromList(rep.lookup("L")); });
-    if (player4_luttins) player4_luttins.forEach(([x, y]) => placerLutin(x, y, 'jaune'));
+    plSession.session.answer(rep => { if (rep && rep !== false) p4 = fromList(rep.lookup("L")); });
+    if (p4) p4.forEach(([x, y]) => placerLutin(x, y, 'jaune'));
 }
 
 function fromList(xs) {
@@ -306,7 +398,7 @@ function placer_les_ponts() {
 }
 
 
-// ---- GESTION DES PONTS (humain) -------------------------------------------------------------
+// ---- GESTION DES PONTS (humain) ----
 
 function supprimerPontDOM(x1, y1, x2, y2) {
     const id = pontId(x1, y1, x2, y2);
@@ -344,12 +436,11 @@ function tournerPontDOM(x1, y1, x2, y2, ax, ay, sens) {
     }
 }
 
-// FIX : verifierPanneauVide appelle next_player quand tous les ponts sont traités
 function verifierPanneauVide(panel) {
     const pontsRestants = panel.querySelectorAll('strong');
     if (pontsRestants.length === 0) {
         panel.innerHTML = "";
-        next_player(); // ← on passe au joueur suivant seulement quand tout est traité
+        next_player();
     }
 }
 
@@ -422,7 +513,7 @@ function proposer_actions_ponts(ponts) {
 }
 
 
-// ---- GESTION DES PONTS (IA) -----------------------------------------------------------------
+// ---- GESTION DES PONTS (IA) ----
 
 function termArg(arg) {
     if (arg.value !== undefined) return arg.value;
@@ -453,34 +544,59 @@ function appliquer_action_pont_DOM(action) {
     }
 }
 
-// L'IA retire simplement les ponts traversés
 function gerer_ponts_IA(joueur, ponts) {
     if (!ponts || ponts.length === 0) return;
     ponts.forEach(([x1, y1, x2, y2]) => {
-        plSession.session.query(`retirer_pont(${x1},${y1},${x2},${y2}).`);
-        plSession.session.answer(_ => {});
-        supprimerPontDOM(x1, y1, x2, y2);
+        plSession.session.query(`
+            capturer_etat(Etat),
+            meilleure_action_pont(Etat, ${joueur}, pont(${x1},${y1},${x2},${y2}), Action, _).
+        `);
+        plSession.session.answer(rep => {
+            if (rep && rep !== false && typeof rep.lookup === 'function') {
+                appliquer_action_pont_DOM(rep.lookup("Action"));
+            } else {
+                plSession.session.query(`retirer_pont(${x1},${y1},${x2},${y2}).`);
+                plSession.session.answer(_ => {});
+                supprimerPontDOM(x1, y1, x2, y2);
+            }
+        });
     });
 }
 
 
-// ---- IA -------------------------------------------------------------------------------------
+// ---- IA ----
 
 function jouer_IA(numJoueur) {
+    // Essaie d'abord get_IA_choice (heuristique avec évaluation)
     plSession.session.query(`
         capturer_etat(Etat),
-        generer_mouvement_fallback(Etat, ${numJoueur}, Mvt),
+        get_IA_choice(Etat, 2, ${numJoueur}, Mvt),
         Mvt = deplacement_ia(_, Xs, Ys, Dir, _, _, _, _, _).
     `);
     plSession.session.answer(rep => {
-        if (!rep || rep === false || typeof rep.lookup !== 'function') {
-            console.warn("IA : pas de mouvement pour joueur", numJoueur);
-            return;
+        if (rep && rep !== false && typeof rep.lookup === 'function') {
+            const xs  = termArg(rep.lookup("Xs"));
+            const ys  = termArg(rep.lookup("Ys"));
+            const dir = termArg(rep.lookup("Dir"));
+            appliquer_coup_IA(numJoueur, xs, ys, dir);
+        } else {
+            // fallback si get_IA_choice échoue
+            plSession.session.query(`
+                capturer_etat(Etat),
+                generer_mouvement_fallback(Etat, ${numJoueur}, Mvt),
+                Mvt = deplacement_ia(_, Xs, Ys, Dir, _, _, _, _, _).
+            `);
+            plSession.session.answer(rep2 => {
+                if (rep2 && rep2 !== false && typeof rep2.lookup === 'function') {
+                    const xs  = termArg(rep2.lookup("Xs"));
+                    const ys  = termArg(rep2.lookup("Ys"));
+                    const dir = termArg(rep2.lookup("Dir"));
+                    appliquer_coup_IA(numJoueur, xs, ys, dir);
+                } else {
+                    console.warn("IA : aucun mouvement possible pour joueur", numJoueur);
+                }
+            });
         }
-        const xs  = termArg(rep.lookup("Xs"));
-        const ys  = termArg(rep.lookup("Ys"));
-        const dir = termArg(rep.lookup("Dir"));
-        appliquer_coup_IA(numJoueur, xs, ys, dir);
     });
 }
 
@@ -503,15 +619,12 @@ function appliquer_coup_IA(joueur, xs, ys, dir) {
             gerer_ponts_IA(joueur, ponts);
         }
 
-        // l'IA a fini → passer au joueur suivant
         next_player();
     });
 }
 
-// ---- FIN IA ---------------------------------------------------------------------------------
 
-
-// ---- DÉPLACEMENTS DES LUTINS (humain) -------------------------------------------------------
+// ---- DÉPLACEMENTS DES LUTINS (humain) ----
 
 function showArrows() {
     const panel = document.getElementById("arrow-panel");
@@ -527,7 +640,6 @@ function showArrows() {
 function activatearrows(lutin) {
     let numJoueur;
     const color = lutin.classList[1];
-
     if (color === "vert") numJoueur = 1;
     else if (color === "rouge") numJoueur = 2;
     else if (color === "bleu") numJoueur = 3;
@@ -536,11 +648,8 @@ function activatearrows(lutin) {
     const xs = lutin.parentElement.dataset.x;
     const ys = lutin.parentElement.dataset.y;
 
-    if (color !== turn) {
-        alert("pas ton tours");
-        return;
-    }
-
+    if (color !== turn) { alert("pas ton tours"); return; }
+    if (iaConfig[turn] !== undefined) return;
     const allarrows = document.querySelectorAll(".arrow");
     allarrows.forEach(arrow => {
         arrow.addEventListener("click", function () {
@@ -552,13 +661,9 @@ function activatearrows(lutin) {
                     const pontsRaw = rep.lookup("Ponts");
                     const pontsArr = fromList(pontsRaw);
                     refresh_joueurs();
-                    // FIX : next_player n'est PAS appelé ici
-                    // il sera appelé par verifierPanneauVide quand tous les ponts sont traités
                     if (pontsArr && pontsArr.length > 0) {
-                        const ponts = pontsArr.map(fromPontTerm);
-                        proposer_actions_ponts(ponts);
+                        proposer_actions_ponts(pontsArr.map(fromPontTerm));
                     } else {
-                        // pas de ponts traversés → on passe directement
                         next_player();
                     }
                 }
@@ -594,7 +699,6 @@ function next_player() {
 
     highlight_turn(turn);
 
-    // Déclenche l'IA si c'est son tour
     if (iaConfig[turn] !== undefined) {
         setTimeout(() => jouer_IA(iaConfig[turn]), 600);
     }
@@ -605,12 +709,10 @@ function next_player() {
 
 function main() {
     print_board();
-    placer_les_joueurs();
-    move_luttin();
     placer_les_ponts();
+    activerPlacement(); 
     highlight_turn(turn);
 }
-
 main();
 
 
