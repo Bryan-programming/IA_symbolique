@@ -2,6 +2,7 @@
    and https://codepen.io/Web_Cifar/pen/jOqBEjE
 */
 let phase = "placement";
+let joueursBlockes = 0;
 
 const nbLutinsParJoueur = 6;
 
@@ -699,20 +700,47 @@ function highlight_turn(color) {
 }
 
 function next_player() {
-    // Éliminer les lutins sans aucun pont avant de passer au joueur suivant
+    // 1. eliminer les lutins bloques
     plSession.session.query("eliminer_tous_lutins_bloques.");
-    plSession.session.answer(_ => { refresh_joueurs(); });
+    plSession.session.answer(_ => {
+        refresh_joueurs();
 
-    if (turn === 'vert')       turn = 'bleu';
-    else if (turn === 'bleu')  turn = 'jaune';
-    else if (turn === 'jaune') turn = 'rouge';
-    else                       turn = 'vert';
+        // 2. Verifier game_over
+        plSession.session.query("capturer_etat(Etat), game_over(Etat).");
+        plSession.session.answer(rep => {
+            if (rep && rep !== false) {
+                alert("Partie terminée !");
+                return;
+            }
 
-    highlight_turn(turn);
+            // 3. Passer au joueur suivant
+            if (turn === 'vert')       turn = 'bleu';
+            else if (turn === 'bleu')  turn = 'jaune';
+            else if (turn === 'jaune') turn = 'rouge';
+            else                       turn = 'vert';
 
-    if (iaConfig[turn] !== undefined) {
-        setTimeout(() => jouer_IA(iaConfig[turn]), 1500);
-    }
+            highlight_turn(turn);
+
+            // 4. Vérifier si le joueur suivant peut bouger
+            const numJoueur = turn === 'vert' ? 1 : turn === 'rouge' ? 2 : turn === 'bleu' ? 3 : 4;
+            plSession.session.query(`capturer_etat(Etat), lutins_joueur(${numJoueur}, Etat, Lutins), peut_bouger_un_lutin(Etat, Lutins).`);
+            plSession.session.answer(canMove => {
+                if (!canMove || canMove === false) {
+                    joueursBlockes++;
+                    if (joueursBlockes >= 4) {
+                        alert("Match nul ! Aucun joueur ne peut bouger.");
+                        return;
+                    }
+                    next_player();
+                    return;
+                }
+                joueursBlockes = 0;
+                if (iaConfig[turn] !== undefined) {
+                    setTimeout(() => jouer_IA(iaConfig[turn]), 1500);
+                }
+            });
+        });
+    });
 }
 
 
