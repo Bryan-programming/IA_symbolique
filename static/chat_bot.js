@@ -523,4 +523,58 @@ gerer_ponts_IA(_, [], Etat, Etat).
 gerer_ponts_IA(Joueur, [Pont|Reste], EtatCourant, EtatFinal) :-
     meilleure_action_pont(EtatCourant, Joueur, Pont, _Action, EtatApres),
     gerer_ponts_IA(Joueur, Reste, EtatApres, EtatFinal).
+
+
+    % prédicats manquants pour que l'IA puisse jouer
+
+pont_adjacent(etat(_,_,_,_,PH,_), X, Y, right, X2, Y) :-
+    X2 is X+1, X2 =< 6,
+    Xmin is min(X,X2), Xmax is max(X,X2),
+    member([[Xmin,Y],[Xmax,Y]], PH).
+pont_adjacent(etat(_,_,_,_,PH,_), X, Y, left, X2, Y) :-
+    X2 is X-1, X2 >= 1,
+    Xmin is min(X,X2), Xmax is max(X,X2),
+    member([[Xmin,Y],[Xmax,Y]], PH).
+pont_adjacent(etat(_,_,_,_,_,PV), X, Y, up, X, Y2) :-
+    Y2 is Y+1, Y2 =< 6,
+    Ymin is min(Y,Y2), Ymax is max(Y,Y2),
+    member([[X,Ymin],[X,Ymax]], PV).
+pont_adjacent(etat(_,_,_,_,_,PV), X, Y, down, X, Y2) :-
+    Y2 is Y-1, Y2 >= 1,
+    Ymin is min(Y,Y2), Ymax is max(Y,Y2),
+    member([[X,Ymin],[X,Ymax]], PV).
+
+occupe_etat(etat(L1,L2,L3,L4,_,_), X, Y) :-
+    ( member([X,Y], L1)
+    ; member([X,Y], L2)
+    ; member([X,Y], L3)
+    ; member([X,Y], L4)
+    ), !.
+
+remplacer_lutins(1, etat(_,L2,L3,L4,PH,PV), NL, etat(NL,L2,L3,L4,PH,PV)).
+remplacer_lutins(2, etat(L1,_,L3,L4,PH,PV), NL, etat(L1,NL,L3,L4,PH,PV)).
+remplacer_lutins(3, etat(L1,L2,_,L4,PH,PV), NL, etat(L1,L2,NL,L4,PH,PV)).
+remplacer_lutins(4, etat(L1,L2,L3,_,PH,PV), NL, etat(L1,L2,L3,NL,PH,PV)).
+
+calculer_case_finale(Etat, X, Y, Dir, Xf, Yf, [pont(X,Y,X2,Y2)|Reste]) :-
+    pont_adjacent(Etat, X, Y, Dir, X2, Y2),
+    dans_plateau(X2, Y2),
+    \+ occupe_etat(Etat, X2, Y2), !,
+    calculer_case_finale(Etat, X2, Y2, Dir, Xf, Yf, Reste).
+calculer_case_finale(_, X, Y, _, X, Y, []).
+
+nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat) :-
+    lutins_joueur(Joueur, Etat, L),
+    select([Xs,Ys], L, LTemp), !,
+    append(LTemp, [[Xf,Yf]], NouvelleL),
+    remplacer_lutins(Joueur, Etat, NouvelleL, NouvelEtat).
+
+generer_mouvement_fallback(Etat, Joueur, Mouvement) :-
+    lutins_joueur(Joueur, Etat, Lutins),
+    member([Xs,Ys], Lutins),
+    member(Dir, [up, down, left, right]),
+    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
+    (Xs \= Xf ; Ys \= Yf),
+    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _),
+    !.
 `
