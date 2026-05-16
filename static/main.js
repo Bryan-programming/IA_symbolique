@@ -573,11 +573,10 @@ function gerer_ponts_IA(joueur, ponts) {
 // ---- IA ----
 
 function jouer_IA(numJoueur) {
-    // Essaie d'abord get_IA_choice (heuristique avec évaluation)
     plSession.session.query(`
         capturer_etat(Etat),
-        get_IA_choice(Etat, 2, ${numJoueur}, Mvt),
-        Mvt = deplacement_ia(_, Xs, Ys, Dir, _, _, _, _, _).
+        generer_mouvement(Etat, ${numJoueur}, Mvt),
+        Mvt = deplacement_ia(_, Xs, Ys, Dir, _, _, _).
     `);
     plSession.session.answer(rep => {
         if (rep && rep !== false && typeof rep.lookup === 'function') {
@@ -586,24 +585,8 @@ function jouer_IA(numJoueur) {
             const dir = termArg(rep.lookup("Dir"));
             appliquer_coup_IA(numJoueur, xs, ys, dir);
         } else {
-            // fallback si get_IA_choice échoue
-            plSession.session.query(`
-                capturer_etat(Etat),
-                generer_mouvement_fallback(Etat, ${numJoueur}, Mvt),
-                Mvt = deplacement_ia(_, Xs, Ys, Dir, _, _, _, _, _).
-            `);
-            plSession.session.answer(rep2 => {
-                if (rep2 && rep2 !== false && typeof rep2.lookup === 'function') {
-                    const xs  = termArg(rep2.lookup("Xs"));
-                    const ys  = termArg(rep2.lookup("Ys"));
-                    const dir = termArg(rep2.lookup("Dir"));
-                    appliquer_coup_IA(numJoueur, xs, ys, dir);
-                } else {
-                    console.warn("IA : aucun mouvement possible pour joueur", numJoueur);
-                    next_player();
-
-                }
-            });
+            console.warn("IA : aucun mouvement possible pour joueur", numJoueur);
+            next_player();
         }
     });
 }

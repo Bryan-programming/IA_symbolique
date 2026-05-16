@@ -743,10 +743,14 @@ generer_mouvement(Etat, Joueur, Mouvement) :-
     generer_mouvement_fallback(Etat, Joueur, Mouvement).
 
 appliquer_mouvement_avec_retrait_ponts(Etat, Mvt, EtatFinal) :-
-    Mvt = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _),
-    calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
+    Mvt = deplacement_ia(Joueur, Xs, Ys, _Dir, Xf, Yf, Ponts),
     nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, EtatApresDepl),
     gerer_ponts_IA(Joueur, Ponts, EtatApresDepl, EtatFinal).
+
+gerer_ponts_IA(_, [], Etat, Etat).
+gerer_ponts_IA(_Joueur, [pont(X1,Y1,X2,Y2)|Reste], EtatCourant, EtatFinal) :-
+    retirer_pont_ia(EtatCourant, X1, Y1, X2, Y2, EtatApres),
+    gerer_ponts_IA(_Joueur, Reste, EtatApres, EtatFinal).
 
 
 /* --------------------------------------------------------------------- */
