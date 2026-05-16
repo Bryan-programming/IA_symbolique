@@ -1,6 +1,6 @@
 class PrologSession {
 
-  session = pl.create(100000);
+  session = pl.create(10000000);
     
   /**
    * Create a new instance.
@@ -8,8 +8,7 @@ class PrologSession {
    */
   constructor () {
 
-    // response initialisation
-    this.response = ''
+
 
     // Read prolog programs
     const resultParsing = this.session.consult(CHATBOT)
@@ -28,10 +27,7 @@ class PrologSession {
         flush: () => true
       },
       'write', 'html_output', 'text', false, 'eof_code'
-    ))
-
-  }
-
+    ))}
   /**
    * Query the prolog database.
    * @param {String} code - Prolog code to answer
@@ -44,8 +40,20 @@ class PrologSession {
 	console.log(pl.format_answer(rep))
 
   // à savoir : ici Message est la variable à passer dans le predicat qui fournit la reponse
-	this.response = rep.lookup("Message")
-    })
+	if (!rep) {
+    addAgentMessage("Erreur : la requête Prolog a échoué.");
+    return;
+  }
+
+  const msg = rep.lookup("Message");
+
+  if (!msg) {
+      addAgentMessage("Erreur : Prolog n’a pas renvoyé de message.");
+      return;
+  }
+
+  const listRep = fromList(msg);
+      })
   }
 
   reset_response() {
@@ -58,17 +66,43 @@ class PrologSession {
     return this.response }
   
   // j'ai crée cette fonction pour convertir la reponse prolog(list de list d'ascii) en string pour bien l'afficher  
-  runQuery(question){
-    console.log("question : " + question)
+  runQuery(question) {
+    console.log("question : " + question);
     this.reset_response();
-    plSession.session.query(question);
-    plSession.session.answer(rep => {
-        const listRep = fromList(rep.lookup("Message"));
-        console.log("listRep = " + listRep)
-        const  reponse = fromArrayCodeToString(listRep);
+    
+    this.session.query(question);
+    this.session.answer(rep => {
+        console.log("rep brut:", pl.format_answer(rep));
+
+        // Échec Prolog (false) ou fin de solutions (null)
+        if (!rep || rep === false) {
+            addAgentMessage("Je n'ai pas compris votre question.");
+            return;
+        }
+
+        // Vérifier que lookup existe
+        if (typeof rep.lookup !== 'function') {
+            addAgentMessage("Erreur interne : réponse Prolog inattendue.");
+            console.error("rep n'est pas un substitution:", rep);
+            return;
+        }
+
+        const msg = rep.lookup("Message");
+        
+        if (!msg) {
+            addAgentMessage("Erreur : variable Message non instanciée.");
+            console.error("Message non trouvé dans:", pl.format_answer(rep));
+            return;
+        }
+
+        console.log("msg Prolog:", pl.format_answer(msg));
+        
+        const listRep = fromList(msg);
+        console.log("listRep =", listRep);
+        
+        const reponse = fromArrayCodeToString(listRep);
         addAgentMessage(reponse);
-      })
-  
-  }
+    });
+}
 
 }

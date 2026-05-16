@@ -1,5 +1,12 @@
 const CHATBOT = String.raw`
 :- use_module(library(lists)).
+:- dynamic(regle_rep/4).
+
+% delete/3 - version simple pour Tau-Prolog
+delete([], _, []).
+delete([E|T], E, R) :- !, delete(T, E, R).
+delete([H|T], E, [H|R]) :- delete(T, E, R).
+
 
 /* --------------------------------------------------------------------- */
 /*                        PRODUIRE_REPONSE                               */
@@ -8,11 +15,10 @@ const CHATBOT = String.raw`
 produire_reponse([fin],[L1]) :-
     L1 = [merci, de, m, '\'', avoir, consulte], !.
 
-produire_reponse(L,Rep) :-
-    mclef(M,_), member(M,L),
-    clause(regle_rep(M,_,Pattern,Rep),Body),
-    match_pattern(Pattern,P),
-    call(Body), !.
+produire_reponse(L, Rep) :-
+    mclef(M, _), member(M, L),
+    regle_rep(M, _, Pattern, Rep),
+    match_pattern(Pattern, L), !.
 
 produire_reponse(_,[S1,S2]) :-
     S1 = "je n'ai pas bien compris votre question,",
@@ -47,14 +53,21 @@ nb_lutins(6).
 nb_equipes(4).
 write_to_chars(6,"6 ").
 
+mclef(verts, 2).
+mclef(bleus, 2).
+mclef(jaunes, 2).
+mclef(rouges, 2).
 mclef(commence,10).
+mclef(conseillez, 5).
 mclef(equipe,5).
-mclef(deplacer,5).
+mclef(occupee,5).
 mclef(ordre,7).
 mclef(pont, 3).
+mclef(deplacer, 5).
+
 
 regle_rep(commence,1,
- [ qui, commence, le, jeu ],
+ [ Qui, commence, le, jeu ],
  [ "par convention, c est au joueur en charge des lutins verts de commencer la partie." ] ).
 
 regle_rep(ordre,7,
@@ -62,13 +75,102 @@ regle_rep(ordre,7,
  [ "d abord les verts, puis les bleus, puis les jaunes puis les rouges" ] ).
 
 regle_rep(equipe,5,
-  [ [ combien ], 3, [ lutins ], 5, [ equipe ] ],
+  [ [ Combien ], 3, [ lutins ], 5, [ equipe ] ],
   [ "chaque equipe compte ", X_in_chars, " lutins" ]) :-
         nb_lutins(X),
         write_to_chars(X,X_in_chars).
 
+number_to_atom(N, A) :-
+    number_codes(N, Codes),
+    atom_codes(A, Codes).
+
+% la fonction get_AI_move génère trop d'appel ce qui surcharge la stack (même avec une profondeur de 1).
+% alors j'ai décidé d'appeler les heuristics individuellement (ce qui est semblable à la fonction avec une profondeur de 1).
+conseil_ia(Joueur, Xs, Ys, Xf, Yf) :-
+    capturer_etat(Etat),
+    ( heuristic1_ia(Etat, Joueur,
+          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _, _, _)) -> true
+    ; heuristic2_ia(Etat, Joueur,
+          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _, _, _)) -> true
+    ; generer_mouvement_fallback(Etat, Joueur,
+          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _, _, _))
+    ), !.
+
+regle_rep(verts, 1,
+  [ [verts], 20, [conseillez] ],
+  [Rep]
+) :-
+    conseil_ia(1, Xs, Ys, Xf, Yf),
+    number_to_atom(Xs, Xsa), number_to_atom(Ys, Ysa),
+    number_to_atom(Xf, Xfa), number_to_atom(Yf, Yfa),
+    atom_concat('Le meilleur deplacement pour les verts est de (', Xsa, T1),
+    atom_concat(T1, ',', T2),
+    atom_concat(T2, Ysa, T3),
+    atom_concat(T3, ') vers (', T4),
+    atom_concat(T4, Xfa, T5),
+    atom_concat(T5, ',', T6),
+    atom_concat(T6, Yfa, T7),
+    atom_concat(T7, ')', AtomRep),
+    atom_codes(AtomRep, Rep). 
+
+% je joue pour les lutins verts, quel lutins me conseillez vous de deplacer et vers quel case
+
+% conseil pour les bleus
+regle_rep(bleus, 1,
+  [ [bleus], 20, [conseillez] ],
+  [Rep]
+) :-
+    conseil_ia(3, Xs, Ys, Xf, Yf),
+    number_to_atom(Xs, Xsa), number_to_atom(Ys, Ysa),
+    number_to_atom(Xf, Xfa), number_to_atom(Yf, Yfa),
+    atom_concat('Le meilleur deplacement pour les bleus est de (', Xsa, T1),
+    atom_concat(T1, ',', T2),
+    atom_concat(T2, Ysa, T3),
+    atom_concat(T3, ') vers (', T4),
+    atom_concat(T4, Xfa, T5),
+    atom_concat(T5, ',', T6),
+    atom_concat(T6, Yfa, T7),
+    atom_concat(T7, ')', AtomRep),
+    atom_codes(AtomRep, Rep). 
+
+% conseil pour les jaunes
+regle_rep(jaunes, 1,
+  [ [jaunes], 20, [conseillez] ],
+  [Rep]
+) :-
+    conseil_ia(4, Xs, Ys, Xf, Yf),
+    number_to_atom(Xs, Xsa), number_to_atom(Ys, Ysa),
+    number_to_atom(Xf, Xfa), number_to_atom(Yf, Yfa),
+    atom_concat('Le meilleur deplacement pour les jaunes est de (', Xsa, T1),
+    atom_concat(T1, ',', T2),
+    atom_concat(T2, Ysa, T3),
+    atom_concat(T3, ') vers (', T4),
+    atom_concat(T4, Xfa, T5),
+    atom_concat(T5, ',', T6),
+    atom_concat(T6, Yfa, T7),
+    atom_concat(T7, ')', AtomRep),
+    atom_codes(AtomRep, Rep). 
+
+% conseil pour les rouges
+regle_rep(rouges, 1,
+  [ [rouges], 20, [conseillez] ],
+  [Rep]
+) :-
+    conseil_ia(2, Xs, Ys, Xf, Yf),
+    number_to_atom(Xs, Xsa), number_to_atom(Ys, Ysa),
+    number_to_atom(Xf, Xfa), number_to_atom(Yf, Yfa),
+    atom_concat('Le meilleur deplacement pour les rouges est de (', Xsa, T1),
+    atom_concat(T1, ',', T2),
+    atom_concat(T2, Ysa, T3),
+    atom_concat(T3, ') vers (', T4),
+    atom_concat(T4, Xfa, T5),
+    atom_concat(T5, ',', T6),
+    atom_concat(T6, Yfa, T7),
+    atom_concat(T7, ')', AtomRep),
+    atom_codes(AtomRep, Rep). 
+
 regle_rep(deplacer,5,
-  [ [ deplacer ], 3, [ lutins ], 5, [ case ], 3, [occupee] ],
+  [ [ deplacer ], 3, [ lutin ], 5, [ case ], 3, [occupee] ],
   [ "non" ]).
 
 regle_rep(pont,3,
@@ -401,15 +503,19 @@ remplacer_lutins(3, etat(L1,L2,_,L4,PH,PV), NL, etat(L1,L2,NL,L4,PH,PV)).
 remplacer_lutins(4, etat(L1,L2,L3,_,PH,PV), NL, etat(L1,L2,L3,NL,PH,PV)).
 
 pont_adjacent(etat(_,_,_,_,PH,_), X, Y, right, X2, Y) :-
+    integer(X), integer(Y), 
     X2 is X+1, X2 =< 6, Xmin is min(X,X2), Xmax is max(X,X2),
     member([[Xmin,Y],[Xmax,Y]], PH).
 pont_adjacent(etat(_,_,_,_,PH,_), X, Y, left, X2, Y) :-
+    integer(X), integer(Y), 
     X2 is X-1, X2 >= 1, Xmin is min(X,X2), Xmax is max(X,X2),
     member([[Xmin,Y],[Xmax,Y]], PH).
 pont_adjacent(etat(_,_,_,_,_,PV), X, Y, up, X, Y2) :-
+    integer(X), integer(Y), 
     Y2 is Y+1, Y2 =< 6, Ymin is min(Y,Y2), Ymax is max(Y,Y2),
     member([[X,Ymin],[X,Ymax]], PV).
 pont_adjacent(etat(_,_,_,_,_,PV), X, Y, down, X, Y2) :-
+    integer(X), integer(Y), 
     Y2 is Y-1, Y2 >= 1, Ymin is min(Y,Y2), Ymax is max(Y,Y2),
     member([[X,Ymin],[X,Ymax]], PV).
 
@@ -523,8 +629,9 @@ actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
     findall(tourner(X1,Y1,X2,Y2,Ax,Ay,Sens),
         ( member(Ax-Ay, [X1-Y1, X2-Y2]),
           member(Sens, [up, down]),
-          Ay2 is (Sens = up -> Ay + 1 ; Ay - 1),
-          Ay2 >= 1, Ay2 =< 6), ATour),
+          ( Sens = up -> Ay2 is Ay + 1 ; Ay2 is Ay - 1 ),
+          Ay2 >= 1, Ay2 =< 6),
+        ATour),
     append(ARet, ATour, Actions).
 
 actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
@@ -533,8 +640,9 @@ actions_pont(_Etat, pont(X1,Y1,X2,Y2), Actions) :-
     findall(tourner(X1,Y1,X2,Y2,Ax,Ay,Sens),
         ( member(Ax-Ay, [X1-Y1, X2-Y2]),
           member(Sens, [right, left]),
-          Ax2 is (Sens = right -> Ax + 1 ; Ax - 1),
-          Ax2 >= 1, Ax2 =< 6), ATour),
+          ( Sens = right -> Ax2 is Ax + 1 ; Ax2 is Ax - 1 ),
+          Ax2 >= 1, Ax2 =< 6),
+        ATour),
     append(ARet, ATour, Actions).
 
 appliquer_action_pont(Etat, retirer(X1,Y1,X2,Y2), EtatFinal) :-
