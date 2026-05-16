@@ -89,11 +89,11 @@ number_to_atom(N, A) :-
 conseil_ia(Joueur, Xs, Ys, Xf, Yf) :-
     capturer_etat(Etat),
     ( heuristic1_ia(Etat, Joueur,
-          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _, _, _)) -> true
+          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _)) -> true
     ; heuristic2_ia(Etat, Joueur,
-          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _, _, _)) -> true
+          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _)) -> true
     ; generer_mouvement_fallback(Etat, Joueur,
-          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _, _, _))
+          deplacement_ia(_, Xs, Ys, _, Xf, Yf, _))
     ), !.
 
 regle_rep(verts, 1,
@@ -686,13 +686,13 @@ nouvel_etat_lutin(Joueur, Xs, Ys, Xf, Yf, Etat, NouvelEtat) :-
     append(LTemp, [[Xf,Yf]], NouvelleL),
     remplacer_lutins(Joueur, Etat, NouvelleL, NouvelEtat).
 
-generer_mouvement_fallback(Etat, Joueur, Mouvement) :-
+    generer_mouvement_fallback(Etat, Joueur, Mouvement) :-
     lutins_joueur(Joueur, Etat, Lutins),
     member([Xs,Ys], Lutins),
     member(Dir, [up, down, left, right]),
     calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
     (Xs \= Xf ; Ys \= Yf),
-    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _), !.
+    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts), !.
 
 peut_bouger_lutin(Etat, X, Y) :-
     member(Dir, [up, down, left, right]),
@@ -721,7 +721,7 @@ heuristic1_ia(Etat, Joueur, Mouvement) :-
     choisir_direction([X1,Y1], Cible, Dir),
     calculer_case_finale(Etat, X1, Y1, Dir, Xf, Yf, Ponts),
     (X1 = Xf, Y1 = Yf -> fail ; true),
-    Mouvement = deplacement_ia(Joueur, X1, Y1, Dir, Xf, Yf, Ponts, Etat, _).
+    Mouvement = deplacement_ia(Joueur, X1, Y1, Dir, Xf, Yf, Ponts).
 
 heuristic2_ia(Etat, Joueur, Mouvement) :-
     lutins_joueur(Joueur, Etat, Lutins_joueur),
@@ -734,7 +734,7 @@ heuristic2_ia(Etat, Joueur, Mouvement) :-
     calculer_case_finale(Etat, Xs, Ys, Dir, Xf, Yf, Ponts),
     (Xs = Xf, Ys = Yf -> fail ; true),
     connectivite(Etat, [Xf,Yf], Connec2), Connec2 >= Connec1,
-    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts, Etat, _).
+    Mouvement = deplacement_ia(Joueur, Xs, Ys, Dir, Xf, Yf, Ponts).
 
 generer_mouvement(Etat, Joueur, Mouvement) :- heuristic1_ia(Etat, Joueur, Mouvement).
 generer_mouvement(Etat, Joueur, Mouvement) :- heuristic2_ia(Etat, Joueur, Mouvement).
