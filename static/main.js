@@ -128,7 +128,7 @@ button.addEventListener('click', () => {
 });
 
 const noteVocale = document.getElementById("chat-voice");
-noteVocale.addEventListener('click', () => { recognition.start(); });
+noteVocale.addEventListener('click', () => { recognition.start();});
 
 
 //  ---------------------------- Fonctions graphiques Tau-prolog \\
@@ -668,6 +668,10 @@ function move_luttin() {
         lutin.addEventListener("click", function (event) {
             if (pontsEnAttente()) return;
             const caseDiv = event.target.closest(".case");
+            if(phase!="jeu"){
+                activatearrows(lutin);
+                return;
+            }
             showArrows();
             activatearrows(lutin);
         });
